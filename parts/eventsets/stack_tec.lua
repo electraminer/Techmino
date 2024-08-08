@@ -1,3 +1,20 @@
+
+function endZone(P)
+	P.modeData.Zone=0
+	P:freshMoveBlock('push')
+	TABLE.cut(P.clearedRow)
+	P:clearFilledLines(1,P.garbageBeneath)
+	-- Release attacks in the buffer
+	for i,attack in pairs(P.atkBuffer) do
+		if attack.stalledByZone then
+			attack.countdown = attack.stalledCountdown
+			attack.stalledByZone = nil
+			attack.stalledCountdown = nil
+		end
+	end
+end
+
+
 return {
 	fieldH=20,
 	task=function(P)
@@ -36,23 +53,37 @@ return {
 			P.modeData.LineTotal=P.modeData.LineTotal+#P.clearedRow
 			if P.modeData.LineTotal>28 then P.modeData.LineTotal=28 end
 		end
+
 		if P.modeData.Zone>0 then
 			P:garbageRise(21,c,1023)
 			P.stat.row=P.stat.row-c
-
-			-- Stall attacks in the attack buffer while zone is active
-			for i,attack in pairs(P.atkBuffer) do
-				if attack.countdown <= 0
-					attack.countdown = 1.0 / 60
-				end
-			end
 		end
 		P:freshMoveBlock('push')
-		if P.modeData.Zone>0 and P.stat.frame>P.modeData.FrameZoneStarted+((P.modeData.Zone)*60*5) then
-		P.modeData.Zone=0
-        P:freshMoveBlock('push')
-		TABLE.cut(P.clearedRow)
-		P:clearFilledLines(1,P.garbageBeneath)
+	end,
+
+	task=function(P)
+		while true do
+			if P.modeData.Zone > 0 then
+				-- Calculate zone time
+				local zoneLength = (P.modeData.Zone)*60*5
+				local zoneTimeElapsed = P.stat.frame - P.modeData.FrameZoneStarted
+				local zoneTimeLeft = zoneLength - zoneTimeElapsed
+				-- Stall attacks in the attack buffer while zone is active
+				for i,attack in pairs(P.atkBuffer) do
+					if not attack.stalledByZone then
+						attack.stalledByZone = true
+						attack.stalledCountdown = attack.countdown
+						attack.countdown = attack.countdown + P.gameEnv.garbageSpeed * zoneTimeLeft
+					end
+				end
+				-- End zone when time runs out
+				if zoneTimeLeft <= 0 then
+					endZone(P)
+				end
+			end
+			
+			coroutine.yield()
+		end
 	end,
 	
 	fkey1=function(P)
@@ -64,9 +95,6 @@ return {
 	end,
 	
     hook_die=function(P)
-		P.modeData.Zone=0
-        P:freshMoveBlock('push')
-		TABLE.cut(P.clearedRow)
-		P:clearFilledLines(1,P.garbageBeneath)
+		endZone(P)
     end,
 }
