@@ -1,7 +1,7 @@
 
 function endZone(P)
 	P.modeData.Zone=0
-	P:freshMoveBlock('push')
+	P:freshMoveBlock ('push')
 	TABLE.cut(P.clearedRow)
 	P:clearFilledLines(1,P.garbageBeneath)
 	-- Release attacks in the buffer
@@ -12,6 +12,13 @@ function endZone(P)
 			attack.stalledCountdown = nil
 		end
 	end
+	--TODO: send BuiltAttack
+	--based on 1,2,3, or 4 quarters
+    local T = randomTarget(P)
+	local sendTime = 300 -- How to calculate sendTime?
+	P:attack(T,P.modeData.BuiltAttack,sendTime,generateLine(P.atkRND:random(10)))
+	--above code needs testing outside of singleplayer
+	P.modeData.BuiltAttack=0
 end
 
 
@@ -21,6 +28,30 @@ return {
 		P.modeData.LineTotal=0
 		P.modeData.Zone=0
 		P.modeData.FrameZoneStarted=0
+		P.modeData.BuiltAttack=0
+
+		while true do
+			if P.modeData.Zone > 0 then
+				-- Calculate zone time
+				local zoneLength = (P.modeData.Zone)*60*5
+				local zoneTimeElapsed = P.stat.frame - P.modeData.FrameZoneStarted
+				local zoneTimeLeft = zoneLength - zoneTimeElapsed
+				-- Stall attacks in the attack buffer while zone is active
+				for i,attack in pairs(P.atkBuffer) do
+					if not attack.stalledByZone then
+						attack.stalledByZone = true
+						attack.stalledCountdown = attack.countdown
+						attack.countdown = attack.countdown + P.gameEnv.garbageSpeed * zoneTimeLeft
+					end
+				end
+				-- End zone when time runs out
+				if zoneTimeLeft <= 0 then
+					endZone(P)
+				end
+			end
+			
+			coroutine.yield()
+		end
 	end,
     mesDisp=function(P)
         setFont(60)
@@ -55,35 +86,13 @@ return {
 		end
 
 		if P.modeData.Zone>0 then
+			-- Total up sent attack
+			P.modeData.BuiltAttack=P.modeData.BuiltAttack+P.lastPiece.atk
+			-- Add the cleared lines back underneath the board
 			P:garbageRise(21,c,1023)
 			P.stat.row=P.stat.row-c
 		end
 		P:freshMoveBlock('push')
-	end,
-
-	task=function(P)
-		while true do
-			if P.modeData.Zone > 0 then
-				-- Calculate zone time
-				local zoneLength = (P.modeData.Zone)*60*5
-				local zoneTimeElapsed = P.stat.frame - P.modeData.FrameZoneStarted
-				local zoneTimeLeft = zoneLength - zoneTimeElapsed
-				-- Stall attacks in the attack buffer while zone is active
-				for i,attack in pairs(P.atkBuffer) do
-					if not attack.stalledByZone then
-						attack.stalledByZone = true
-						attack.stalledCountdown = attack.countdown
-						attack.countdown = attack.countdown + P.gameEnv.garbageSpeed * zoneTimeLeft
-					end
-				end
-				-- End zone when time runs out
-				if zoneTimeLeft <= 0 then
-					endZone(P)
-				end
-			end
-			
-			coroutine.yield()
-		end
 	end,
 	
 	fkey1=function(P)
