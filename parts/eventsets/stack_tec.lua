@@ -2,10 +2,9 @@ local LINES_PER_QUARTER = 7
 local TIME_PER_QUARTER = 60 * 5
 
 local function _endZone(P)
-	P.modeData.Zone=0
 	P:freshMoveBlock ('push')
 	TABLE.cut(P.clearedRow)
-	P:clearFilledLines(1,P.garbageBeneath)
+	local zoneLines = P:clearFilledLines(1,P.garbageBeneath)
 	-- Release attacks in the buffer
 	for i,attack in pairs(P.atkBuffer) do
 		if attack.stalledByZone then
@@ -14,13 +13,40 @@ local function _endZone(P)
 			attack.stalledCountdown = nil
 		end
 	end
-	--TODO: send BuiltAttack
-	--based on 1,2,3, or 4 quarters
-    local T = randomTarget(P)
-	local sendTime = 300 -- How to calculate sendTime?
-	P:attack(T,P.modeData.BuiltAttack,sendTime,generateLine(P.atkRND:random(10)))
+	-- Restore the player's attack power
+	P.strength = 0
+	-- Separate the lines attack into chunks, more quarter zones get bonus chunks
+	local linesAttackChunks = P.modeData.Zone + 2
+	-- Chunks grow for larger zones
+	local linesAttack = math.floor(zoneLines / 4)
+	-- Number of extra lines not accounted for by zoneLines / 4
+	local linesAttackRemainder = zoneLines % 4
+	for i=1,linesAttackChunks do
+		if i <= linesAttackRemainder then
+			-- Add 1 extra attack for each remainder
+			table.insert(P.modeData.builtAttack, linesAttack + 1)
+		elseif linesAttack > 0 then
+			table.insert(P.modeData.builtAttack, linesAttack)
+		end
+	end
+
+	-- Bonus attack for Ulticrash and above
+	local bonusLines = math.max(zoneLines - 19, 0)
+	local bonusAttack = bonusLines * bonusLines * 4
+	table.insert(P.modeData.builtAttack, bonusAttack)
+
+	-- Send each line
+	local totalSendTime = TIME_PER_QUARTER
+	for i,attack in ipairs(P.modeData.builtAttack) do
+		local T = randomTarget(P)
+		local cancelledAttack = P:cancel(attack)
+		local sendTime = totalSendTime * i / #P.modeData.builtAttack -- Lines come in over time
+		P:attack(T,attack - cancelledAttack,sendTime,generateLine(P.atkRND:random(10)))
+	end
+	-- Do we need to add the attack statistics for this?
 	--above code needs testing outside of singleplayer
-	P.modeData.BuiltAttack=0
+	P.modeData.builtAttack={}
+	P.modeData.Zone=0
 end
 
 local function _drawMeter(x,y,meters)
@@ -47,7 +73,7 @@ return {
 		P.modeData.LineTotal=0
 		P.modeData.Zone=0
 		P.modeData.FrameZoneStarted=0
-		P.modeData.BuiltAttack=0
+		P.modeData.builtAttack={}
 
 		while true do
 			if P.modeData.Zone > 0 then
@@ -63,10 +89,8 @@ return {
 						attack.countdown = attack.countdown + P.gameEnv.garbageSpeed * zoneTimeLeft
 					end
 				end
-				-- End zone when time runs out
-				if zoneTimeLeft <= 0 then
-					_endZone(P)
-				end
+				-- Player cannot attack immediately - so their strength is negative to suppress it
+				P.strength = -4
 			end
 			
 			coroutine.yield()
@@ -122,11 +146,21 @@ return {
 		end
 
 		if P.modeData.Zone>0 then
+			local zoneLength = (P.modeData.Zone)*TIME_PER_QUARTER
+			local zoneTimeElapsed = P.stat.frame - P.modeData.FrameZoneStarted
+			local zoneTimeLeft = zoneLength - zoneTimeElapsed
 			-- Total up sent attack
-			P.modeData.BuiltAttack=P.modeData.BuiltAttack+P.lastPiece.atk
+			if P.lastPiece.atk > 0 then
+				table.insert(P.modeData.builtAttack, P.lastPiece.atk)
+			end
 			-- Add the cleared lines back underneath the board
 			P:garbageRise(21,c,1023)
 			P.stat.row=P.stat.row-c
+			
+			-- End zone when time runs out
+			if zoneTimeLeft <= 0 then
+				_endZone(P)
+			end
 		end
 		P:freshMoveBlock('push')
 	end,
