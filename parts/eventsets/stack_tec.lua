@@ -39,6 +39,13 @@ return {
 		if P.modeData.Zone>0 then
 			P:garbageRise(21,c,1023)
 			P.stat.row=P.stat.row-c
+
+			-- Stall attacks in the attack buffer while zone is active
+			for i,attack in pairs(P.atkBuffer) do
+				if attack.countdown <= 0
+					attack.countdown = 1.0 / 60
+				end
+			end
 		end
 		P:freshMoveBlock('push')
 		if P.modeData.Zone>0 and P.stat.frame>P.modeData.FrameZoneStarted+((P.modeData.Zone)*60*5) then
@@ -46,7 +53,6 @@ return {
         P:freshMoveBlock('push')
 		TABLE.cut(P.clearedRow)
 		P:clearFilledLines(1,P.garbageBeneath)
-		end
 	end,
 	
 	fkey1=function(P)
