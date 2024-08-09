@@ -42,7 +42,6 @@ local function _endZone(P)
 	-- Send each line
 	local totalSendTime = TIME_PER_QUARTER
 	for i,attack in ipairs(P.modeData.builtAttack) do
-		MES.new('', attack)
 		local T = randomTarget(P)
 		local cancelledAttack = P:cancel(attack)
 		local sendTime = totalSendTime * i / #P.modeData.builtAttack -- Lines come in over time
