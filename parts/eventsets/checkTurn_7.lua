@@ -1,13 +1,16 @@
 -- The amount of frames in each player's main time.
-local MAIN_TIME = 60 * 30
+local MAIN_TIME = 60 * 60 * 15
 -- The amount of frames to make each move before the main time starts to count down.
-local MOVE_TIME = 60 * 5
+local MOVE_TIME = 60 * 30
 -- If this is true, the player's main time will be incremented by their move time if they have any left.
 local USE_INCREMENT = true
 -- Once a player's main time runs out, this is the amount of time in each period.
-local BYO_YOMI = 60 * 5
+local BYO_YOMI = 60 * 30
 -- Total number of periods before reaching Sudden Death.
 local TOTAL_PERIODS = 5
+-- If this is true, placing a piece will automatically commit (no undo!)
+-- This is auto-enabled in BYO-YOMI period, and for AI (since they don't undo)
+local AUTO_COMMIT = false
 
 local function getSpeed(period, totalPeriods)
     local speed = period / totalPeriods * 2
@@ -165,8 +168,207 @@ local function drawTimeAlert(alert, caption, frames)
     GC.pop()
 end
 
+function saveState(inputs, outputs, excludes)
+    -- This is a list of the tables found in the input.
+    local tables = inputs
+    -- This is a map mapping tables in the input to tables in the output
+    local tableMap = {}
+    for i=1,#inputs do
+        local t = tables[i]
+        if i <= #outputs then
+            tableMap[t] = outputs[i]
+        else
+            tableMap[t] = {}
+        end
+    end
+
+    -- Process each table to find all tables and make new table equivalents.
+    local i = 1
+    while i <= #tables do
+        local t = tables[i]
+        for k, v in pairs(t) do
+            local excluded = false
+            if i <= #excludes then
+                for _,x in ipairs(excludes[i]) do
+                    if x == k then
+                        excluded = true
+                    end
+                end
+            end
+            if type(v) == "table" and not excluded then
+                if not tableMap[v] then
+                    table.insert(tables, v)
+                    tableMap[v] = {}
+                end
+            end
+        end
+        i = i + 1
+    end
+
+    -- Copy each table from the old table to the new table, replacing all tables with their equivalents.
+    local newTables = {}
+    for i=1,#tables do
+        local oldTable = tables[i]
+        local newTable = tableMap[oldTable]
+        local metatable = getmetatable(oldTable)
+        setmetatable(newTable, metatable)
+        -- Clear the new table
+        for k, v in pairs(newTable) do
+            local excluded = false
+            if i <= #excludes then
+                for _,x in ipairs(excludes[i]) do
+                    if x == k then
+                        excluded = true
+                    end
+                end
+            end
+            if not excluded then
+                newTable[k] = nil
+            end
+        end
+        for k, v in pairs(oldTable) do
+            local excluded = false
+            if i <= #excludes then
+                for _,x in ipairs(excludes[i]) do
+                    if x == k then
+                        excluded = true
+                    end
+                end
+            end
+            if not excluded then
+                if type(k) == "table" then
+                    MES.new("warn", "Found a table with keys as tables - this may go wrong!")
+                end
+                if type(v) == "table" then
+                    newTable[k] = tableMap[v]
+                else 
+                    newTable[k] = v
+                end
+            end
+        end
+
+        table.insert(newTables, newTable)
+    end
+
+    return newTables
+end
+
+local function savestateCtx(P)
+    local saved = {P, P.modeData.speculativeAtk}
+    for i,p in ipairs(PLAYERS) do
+        table.insert(saved, p.atkBuffer)
+    end
+    return saved, {{'modeData', 'keyPressing'}}
+end
+
+function commit(P)
+    -- Go back to the piece spawning
+    if #P.modeData.savestates >= 1 and not P.type == 'bot' then
+        local savestate = P.modeData.savestates[#P.modeData.savestates]
+        local ctx, excluded = savestateCtx(P)
+        saveState(savestate, ctx, excluded)
+    end
+    -- Reveal RNG
+    local turns = P.stat.piece - P.modeData.lastCommit
+    for i=1,turns do
+        P:newNext(true)
+    end
+    -- Reveal garbage
+    local totalAtk = 0
+    for _,atk in ipairs(P.modeData.speculativeAtk) do
+        totalAtk = totalAtk + atk
+    end
+    for _,atk in ipairs(P.modeData.speculativeAtk) do
+        local position = 0
+        if P.modeData.atkLast == 0 then
+            position = P.modeData.atkRND:random(10)
+        else
+            position = P.modeData.atkRND:random(9)
+            if position >= P.modeData.atkLast then
+                position = position + 1
+            end
+        end
+        P.modeData.atkLast = position
+        for i=1,atk do
+            P.field[totalAtk][position] = 0
+            totalAtk = totalAtk - 1
+        end
+    end
+    P.modeData.speculativeAtk = {}
+    -- Clear savestates
+    P.modeData.savestates = {}
+    local ctx, excluded = savestateCtx(P)
+    local savestate = saveState(ctx, {}, excluded)
+    table.insert(P.modeData.savestates, savestate)
+
+    -- Pass the turn
+    if P.stat.piece%7==0 and P.modeData.lastCommit ~= P.stat.piece then
+        P.control = false
+        if P.modeData.period > TOTAL_PERIODS then
+            -- Sudden Death
+            P.modeData.moveTime = 0
+        elseif P.modeData.period > 0 then
+            P.modeData.moveTime = BYO_YOMI
+        else
+            if USE_INCREMENT then
+                P.modeData.mainTime = P.modeData.mainTime + P.modeData.moveTime
+            end
+            P.modeData.moveTime = MOVE_TIME
+        end
+
+        P = nextPlayer(P)
+        P.control = true
+        P.modeData.startingPeriod = P.modeData.period
+        P.modeData.savestates = {}
+        P.modeData.lastCommit = P.stat.piece
+        P.waiting = 0
+        if P.modeData.fakedQueue then
+            -- Remove the fake piece from the start of the next queue
+            table.remove(P.nextQueue, 1)
+            P.modeData.fakedQueue = false
+        end
+    end
+    P.modeData.lastCommit = P.stat.piece
+end
+
+local getSeqGen=require"parts.player.seqGenerators"
 return {
     task=function(P)
+        -- Generate the custom RNG generators for each player
+        -- First burn a value for each SID count
+        for i=1,P.sid do
+            local burn = P.seqRND:random(256*256*256) + P.seqRND:random(703*703)
+        end
+        -- We are adding two separate generations together to ensure no correlation.
+        local seed = P.seqRND:random(256*256*256) + P.seqRND:random(703*703)
+        P.modeData.seqRND = love.math.newRandomGenerator(seed)
+        P.modeData.atkRND = love.math.newRandomGenerator(seed)
+        P.modeData.seqGen = coroutine.create(getSeqGen(P.gameEnv.sequence))
+        P.modeData.bagLineCounter = 0
+        P.modeData.atkLast = 0
+        P.modeData.speculativeAtk = {}
+        P.gameEnv.garbageSpeed = 0
+
+        P.nextQueue = {}
+        function P:newNext(force)
+            if force then
+                local status, piece = coroutine.resume(P.modeData.seqGen, P.modeData.seqRND, P.gameEnv.seqData)
+                if not status then
+                    assert(piece == 'cannot resume dead coroutine')
+                elseif piece then
+                    P:getNext(piece, P.modeData.bagLineCounter)
+                    P.modeData.bagLineCounter = 0
+                else
+                    if P.gameEnv.bagLine then
+                        P.modeData.bagLineCounter = P.modeData.bagLineCounter+1
+                    end
+                    P:newNext(true)
+                end
+            end
+        end
+        for i=1,8 do
+            P:newNext(true)
+        end
         P.control = false
         P.modeData.mainTime = MAIN_TIME
         P.modeData.moveTime = MOVE_TIME
@@ -174,6 +376,8 @@ return {
         P.modeData.startingPeriod = 0
         P.gameEnv.drop = 1e99
         P.dropDelay = 1e99
+        P.modeData.savestates = {}
+        P.modeData.lastCommit = P.stat.piece
         if MAIN_TIME == 0 then
             P.modeData.moveTime = BYO_YOMI
             P.modeData.period = 1
@@ -185,12 +389,29 @@ return {
             P.lockDelay = 30
         end
         -- Wait until the countdown finishes
-        while P.frameRun <= 180 do
+        while P.frameRun < 179 do
+            -- Currently does not supress the first piece spawn
             coroutine.yield()
         end
+        P.gameEnv.wait = 0
         P.control = P == firstPlayer()
+        if P == firstPlayer() then
+            P.control = true
+            P.waiting = 0
+            P.modeData.fakedQueue = false
+        else 
+            -- Fake the queue so you can see the piece that was spawned
+            table.insert(P.nextQueue, 1, P.cur)
+            P.modeData.fakedQueue = true
+        end
         while true do
             if P.control then
+                if P.waiting > 1e98 then
+                    -- Auto pass turn
+                    if AUTO_COMMIT or P.type == 'bot' or P.modeData.period > 0 then
+                        commit(P)
+                    end
+                end
                 if P.modeData.moveTime > 0 then
                     -- Move time
                     P.modeData.moveTime = P.modeData.moveTime - 1
@@ -241,7 +462,27 @@ return {
             return
         end
 
-        -- Display status message
+        -- Display turn status
+        local piecesRemaining = 7 - P.stat.piece % 7
+        if P.waiting > 1e98 then
+            local animationCycle = (P.frameRun % 60) / 60
+            animationCycle = MATH.abs(animationCycle - 0.5) * 2
+            GC.setColor(1, 1, 1, 0.5 + 0.5*animationCycle)
+            local key = 'Function 1'
+            for k,v in pairs(KEY_MAP.keyboard) do
+                if v == 9 then
+                    key = "Press "..string.upper(k)
+                    break
+                end
+            end
+            GC.mStr(key.." to pass", 300, 10)
+        elseif piecesRemaining == 1 then
+            GC.mStr(piecesRemaining.." placement left", 300, 10)
+        else
+            GC.mStr(piecesRemaining.." placements left", 300, 10)
+        end
+
+        -- Display timer alert message
         local caption = "MOVE TIME"
         local time = P.modeData.moveTime
         if P.modeData.moveTime == 0 then
@@ -293,23 +534,60 @@ return {
         end
     end,
 
-    hook_drop=function(P)
-        if P.stat.piece%7==0 and #PLY_ALIVE>1 then
-            P.control = false
-            if P.modeData.period > TOTAL_PERIODS then
-                -- Sudden Death
-                P.modeData.moveTime = 0
-            elseif P.modeData.period > 0 then
-                P.modeData.moveTime = BYO_YOMI
-            else
-                if USE_INCREMENT then
-                    P.modeData.mainTime = P.modeData.mainTime + P.modeData.moveTime
-                end
-                P.modeData.moveTime = MOVE_TIME
-            end
-            P = nextPlayer(P)
-            P.control = true
-            P.modeData.startingPeriod = P.modeData.period
+    hook_spawn=function(P)
+        local ctx, excluded = savestateCtx(P)
+        local savestate = saveState(ctx, {}, excluded)
+        table.insert(P.modeData.savestates, savestate)
+        
+        if AUTO_COMMIT or P.type == 'bot' or P.modeData.period > 0 then
+            commit(P)
         end
     end,
+
+    hook_drop=function(P)
+        if P.stat.piece%7==0 then
+            local ctx, excluded = savestateCtx(P)
+            local savestate = saveState(ctx, {}, excluded)
+            table.insert(P.modeData.savestates, savestate)
+            P.waiting = 1e99
+        end
+        -- Parse garbage
+        if #P.clearedRow == 0 then
+            for i,atk in ipairs(P.atkBuffer) do
+                -- Store the attack in the table
+                table.insert(P.modeData.speculativeAtk, atk.amount)
+                atk.line = 1023
+                -- Receive the garbage
+                atk.countdown = 0
+            end
+            P:garbageRelease()
+        end
+    end,
+    
+    hook_die=function(P)
+        P.modeData.speculativeAtk = {}
+    end,
+
+    -- Commit
+    fkey1=function(P)
+        commit(P)
+    end,
+
+    -- Undo
+    fkey2=function(P)
+        -- Undo disabled when automatically committing
+        if AUTO_COMMIT or P.type == 'bot' or P.modeData.period > 0 then
+            return
+        end
+
+        local savestate = nil
+        if #P.modeData.savestates >= 2 then
+            P.modeData.savestates[#P.modeData.savestates] = nil
+        end
+        if #P.modeData.savestates >= 1 then
+            local savestate = P.modeData.savestates[#P.modeData.savestates]
+            local ctx, excluded = savestateCtx(P)
+            saveState(savestate, ctx, excluded)
+        end
+    end
 }
