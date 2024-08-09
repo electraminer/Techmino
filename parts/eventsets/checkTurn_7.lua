@@ -359,6 +359,7 @@ return {
         P.modeData.atkLast = 0
         P.modeData.speculativeAtk = {}
         P.gameEnv.garbageSpeed = 0
+        P.gameEnv.pushSpeed = 1e99
 
         P.nextQueue = {}
         function P:newNext(force)
