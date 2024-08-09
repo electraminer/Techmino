@@ -251,12 +251,14 @@ end
 
 local function savestateCtx(P)
     local saved = {P, P.modeData.speculativeAtk}
+    local whitelist = {{"field", "visTime", "cur", "curX", "curY", "nextQueue", "holdQueue", "ghoY", "stat", "netAtk"}, false}
+    local blacklist = {false, false}
     for i,p in ipairs(PLAYERS) do
-        table.insert(saved, p.atkBuffer)
-        table.insert(saved, p.netAtk)
+        table.insert(saved, p)
+        table.insert(whitelist, {"atkBuffer", "netAtk"})
+        table.insert(blacklist, false)
     end
-    -- return saved, {}, {{'modeData', 'keyPressing'}}
-    return saved, {{"field", "visTime", "cur", "curX", "curY", "nextQueue", "holdQueue", "ghoY", "stat"}}, {}
+    return saved, whitelist, blacklist
 end
 
 function commit(P)
