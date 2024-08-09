@@ -260,7 +260,7 @@ local function savestateCtx(P)
     local blacklist = {false, false}
     for i,p in ipairs(PLAYERS) do
         table.insert(saved, p)
-        table.insert(whitelist, {'atkBuffer', 'netAtk'})
+        table.insert(whitelist, {'atkBuffer', 'netAtk', 'atkBufferSum'})
         table.insert(blacklist, false)
     end
     return saved, whitelist, blacklist
@@ -364,8 +364,10 @@ return {
                     )
                 end
             end
-            R:receive(self,send,time,line)
-            self:createBeam(R,send)
+            if not fromStream then
+                R:receive(self,send,time,line)
+                self:createBeam(R,send)
+            end
         end
 
         -- Generate the custom RNG generators for each player
