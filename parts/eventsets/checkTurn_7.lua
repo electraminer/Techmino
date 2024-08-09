@@ -168,7 +168,7 @@ local function drawTimeAlert(alert, caption, frames)
     GC.pop()
 end
 
-function saveState(inputs, outputs, excludes)
+function saveState(inputs, outputs, whitelists, blacklists)
     -- This is a list of the tables found in the input.
     local tables = inputs
     -- This is a map mapping tables in the input to tables in the output
@@ -182,20 +182,32 @@ function saveState(inputs, outputs, excludes)
         end
     end
 
+    function allowed(i, k)
+        local allowed = true
+        if whitelists[i] then
+            allowed = false
+            for _,x in ipairs(whitelists[i]) do
+                if x == k then
+                    allowed = true
+                end
+            end
+        end
+        if blacklists[i] then
+            for _,x in ipairs(blacklists[i]) do
+                if x == k then
+                    allowed = false
+                end
+            end
+        end
+        return allowed
+    end
+
     -- Process each table to find all tables and make new table equivalents.
     local i = 1
     while i <= #tables do
         local t = tables[i]
         for k, v in pairs(t) do
-            local excluded = false
-            if i <= #excludes then
-                for _,x in ipairs(excludes[i]) do
-                    if x == k then
-                        excluded = true
-                    end
-                end
-            end
-            if type(v) == "table" and not excluded then
+            if type(v) == "table" and allowed(i, k) then
                 if not tableMap[v] then
                     table.insert(tables, v)
                     tableMap[v] = {}
@@ -214,28 +226,12 @@ function saveState(inputs, outputs, excludes)
         setmetatable(newTable, metatable)
         -- Clear the new table
         for k, v in pairs(newTable) do
-            local excluded = false
-            if i <= #excludes then
-                for _,x in ipairs(excludes[i]) do
-                    if x == k then
-                        excluded = true
-                    end
-                end
-            end
-            if not excluded then
+            if allowed(i, k) then
                 newTable[k] = nil
             end
         end
         for k, v in pairs(oldTable) do
-            local excluded = false
-            if i <= #excludes then
-                for _,x in ipairs(excludes[i]) do
-                    if x == k then
-                        excluded = true
-                    end
-                end
-            end
-            if not excluded then
+            if allowed(i, k) then
                 if type(k) == "table" then
                     MES.new("warn", "Found a table with keys as tables - this may go wrong!")
                 end
@@ -258,15 +254,16 @@ local function savestateCtx(P)
     for i,p in ipairs(PLAYERS) do
         table.insert(saved, p.atkBuffer)
     end
-    return saved, {{'modeData', 'keyPressing'}}
+    -- return saved, {}, {{'modeData', 'keyPressing'}}
+    return saved, {{"field", "cur", "curX", "curY", "nextQueue", "holdQueue", "ghoY", "stat"}}, {}
 end
 
 function commit(P)
     -- Go back to the piece spawning
     if #P.modeData.savestates >= 1 and not P.type == 'bot' then
         local savestate = P.modeData.savestates[#P.modeData.savestates]
-        local ctx, excluded = savestateCtx(P)
-        saveState(savestate, ctx, excluded)
+        local ctx, whitelists, blacklists = savestateCtx(P)
+        saveState(savestate, ctx, whitelists, blacklists)
     end
     -- Reveal RNG
     local turns = P.stat.piece - P.modeData.lastCommit
@@ -297,8 +294,8 @@ function commit(P)
     P.modeData.speculativeAtk = {}
     -- Clear savestates
     P.modeData.savestates = {}
-    local ctx, excluded = savestateCtx(P)
-    local savestate = saveState(ctx, {}, excluded)
+    local ctx, whitelists, blacklists = savestateCtx(P)
+    local savestate = saveState(ctx, {}, whitelists, blacklists)
     table.insert(P.modeData.savestates, savestate)
 
     -- Pass the turn
@@ -535,8 +532,8 @@ return {
     end,
 
     hook_spawn=function(P)
-        local ctx, excluded = savestateCtx(P)
-        local savestate = saveState(ctx, {}, excluded)
+        local ctx, whitelists, blacklists = savestateCtx(P)
+        local savestate = saveState(ctx, {}, whitelists, blacklists)
         table.insert(P.modeData.savestates, savestate)
         
         if AUTO_COMMIT or P.type == 'bot' or P.modeData.period > 0 then
@@ -546,8 +543,8 @@ return {
 
     hook_drop=function(P)
         if P.stat.piece%7==0 then
-            local ctx, excluded = savestateCtx(P)
-            local savestate = saveState(ctx, {}, excluded)
+            local ctx, whitelists, blacklists = savestateCtx(P)
+            local savestate = saveState(ctx, {}, whitelists, blacklists)
             table.insert(P.modeData.savestates, savestate)
             P.waiting = 1e99
         end
@@ -586,8 +583,8 @@ return {
         end
         if #P.modeData.savestates >= 1 then
             local savestate = P.modeData.savestates[#P.modeData.savestates]
-            local ctx, excluded = savestateCtx(P)
-            saveState(savestate, ctx, excluded)
+            local ctx, whitelists, blacklists = savestateCtx(P)
+            saveState(savestate, ctx, whitelists, blacklists)
         end
     end
 }
