@@ -343,8 +343,8 @@ return {
         function P:attack(R,send,time,line,fromStream)
             if GAME.net then
                 if self.type=='human' then-- Local player attack others
-                    ins(GAME.rep,self.frameRun)
-                    ins(GAME.rep,
+                    TABLE.insert(GAME.rep,self.frameRun)
+                    TABLE.insert(GAME.rep,
                         R.sid+
                         send*0x100+
                         time*0x10000+
@@ -354,8 +354,8 @@ return {
                     self:createBeam(R,send)
                 end
                 if fromStream and R.type=='human' then-- Local player receiving lines
-                    ins(GAME.rep,R.frameRun)
-                    ins(GAME.rep,
+                    TABLE.insert(GAME.rep,R.frameRun)
+                    TABLE.insert(GAME.rep,
                         self.sid+
                         send*0x100+
                         time*0x10000+
