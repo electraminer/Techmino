@@ -82,15 +82,12 @@ return {
 
 		while true do
 			for i,attack in pairs(P.atkBuffer) do
-				-- Make sure all attacks but the first are delayed, so only one is accepted at a time
-				if i > 1 then
-					attack.countdown = MATH.max(attack.countdown, 2 * P.gameEnv.garbageSpeed)
-				end
 				-- Make sure attacks in zone are stalled
 				if attack.stalledByZone then
 					attack.countdown = attack.stalledCountdown
-					attack.countdown = MATH.max(attack.countdown, 2 * P.gameEnv.garbageSpeed)
 				end
+				-- Make sure all attacks are delayed, so they can be manually processed one at a time
+				attack.countdown = MATH.max(attack.countdown, P.gameEnv.garbageSpeed)
 			end
 			if P.modeData.Zone > 0 then
 				-- Calculate zone time
@@ -133,7 +130,7 @@ return {
 			local zoneLength = (P.modeData.Zone)*TIME_PER_QUARTER
 			local zoneTimeElapsed = P.stat.frame - P.modeData.FrameZoneStarted
 			local zoneTimeLeft = zoneLength - zoneTimeElapsed
-			local meterLeft = zoneTimeLeft / TIME_PER_QUARTER / 4
+			local meterLeft = MATH.max(zoneTimeLeft / TIME_PER_QUARTER / 4, 0)
 			_drawMeter(63, 440, {
 				meterLeft, {COLOR.HSVToRGB(animationCycle, 0.89, 0.91)}
 			})
@@ -178,6 +175,23 @@ return {
 			-- End zone when time runs out
 			if zoneTimeLeft <= 0 then
 				_endZone(P)
+			end
+		elseif c == 0 then
+			-- Process only one line of the garbage queue
+			if P.atkBuffer[1] and P.atkBuffer[1].countdown <= P.gameEnv.garbageSpeed then
+				B = P.cur
+				local incomingLines = P.atkBuffer[1].amount
+				local willDie = B and P:ifoverlap(B.bk,P:getSpawnX(B),P:getSpawnY(B) - incomingLines)
+				-- Automatically use zone to save yourself from certain death
+				-- This feature crashes the AI... why?
+				if willDie and P.modeData.LineTotal>=LINES_PER_QUARTER then
+					P.modeData.Zone=math.floor(P.modeData.LineTotal/LINES_PER_QUARTER)
+					P.modeData.LineTotal=0
+					P.modeData.FrameZoneStarted=P.stat.frame
+				else
+					P.atkBuffer[1].countdown = 0
+					P:garbageRelease()
+				end
 			end
 		end
 		
