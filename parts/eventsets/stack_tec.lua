@@ -9,11 +9,7 @@ local function _endZone(P)
 	local zoneLines = P:clearFilledLines(1,P.garbageBeneath)
 	-- Release attacks in the buffer
 	for i,attack in pairs(P.atkBuffer) do
-		if attack.stalledByZone then
-			attack.countdown = attack.stalledCountdown
-			attack.stalledByZone = nil
-			attack.stalledCountdown = nil
-		end
+		attack.stalledByZone = nil
 	end
 	-- Restore the player's attack power
 	P.strength = 0
@@ -38,14 +34,14 @@ local function _endZone(P)
 	if bonusAttack > 0 then
 		table.insert(P.modeData.builtAttack, bonusAttack)
 	end
-
+	local _test = P.modeData.timePerQuarter
 	-- Send each line
 	local totalSendTime = TIME_PER_QUARTER
 	for i,attack in ipairs(P.modeData.builtAttack) do
 		local T = randomTarget(P)
 		local cancelledAttack = P:cancel(attack)
 		local sendTime = totalSendTime * i / #P.modeData.builtAttack -- Lines come in over time
-		P:attack(T,attack - cancelledAttack,sendTime,generateLine(P.atkRND:random(10)))
+		P:attack(T,attack - cancelledAttack, sendTime, generateLine(P.atkRND:random(10)))
 	end
 	-- Do we need to add the attack statistics for this?
 	--above code needs testing outside of singleplayer
@@ -82,8 +78,20 @@ return {
 		P.modeData.Zone=0
 		P.modeData.FrameZoneStarted=0
 		P.modeData.builtAttack={}
+		P.modeData.timePerQuarter = 0
 
 		while true do
+			for i,attack in pairs(P.atkBuffer) do
+				-- Make sure all attacks but the first are delayed, so only one is accepted at a time
+				if i > 1 then
+					attack.countdown = MATH.max(attack.countdown, 2 * P.gameEnv.garbageSpeed)
+				end
+				-- Make sure attacks in zone are stalled
+				if attack.stalledByZone then
+					attack.countdown = attack.stalledCountdown
+					attack.countdown = MATH.max(attack.countdown, 2 * P.gameEnv.garbageSpeed)
+				end
+			end
 			if P.modeData.Zone > 0 then
 				-- Calculate zone time
 				local zoneLength = (P.modeData.Zone)*TIME_PER_QUARTER
@@ -94,7 +102,6 @@ return {
 					if not attack.stalledByZone then
 						attack.stalledByZone = true
 						attack.stalledCountdown = attack.countdown
-						attack.countdown = attack.countdown + P.gameEnv.garbageSpeed * zoneTimeLeft
 					end
 				end
 				-- Player cannot attack immediately - so their strength is negative to suppress it
@@ -152,13 +159,7 @@ return {
 
 	hook_drop=function(P)
 		local c=#P.clearedRow
-		if #P.clearedRow>0 and P.modeData.Zone==0 then
-			P.modeData.LineTotal=P.modeData.LineTotal+#P.clearedRow
-			if P.modeData.LineTotal>LINES_PER_QUARTER*4 then
-				P.modeData.LineTotal=LINES_PER_QUARTER*4
-			end
-		end
-
+		
 		if P.modeData.Zone>0 then
 			local zoneLength = (P.modeData.Zone)*TIME_PER_QUARTER
 			local zoneTimeElapsed = P.stat.frame - P.modeData.FrameZoneStarted
@@ -177,6 +178,13 @@ return {
 			-- End zone when time runs out
 			if zoneTimeLeft <= 0 then
 				_endZone(P)
+			end
+		end
+		
+		if #P.clearedRow>0 and P.modeData.Zone==0 then
+			P.modeData.LineTotal=P.modeData.LineTotal+#P.clearedRow
+			if P.modeData.LineTotal>LINES_PER_QUARTER*4 then
+				P.modeData.LineTotal=LINES_PER_QUARTER*4
 			end
 		end
 	end,
