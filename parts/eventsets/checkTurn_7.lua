@@ -255,7 +255,7 @@ local function savestateCtx(P)
         table.insert(saved, p.atkBuffer)
     end
     -- return saved, {}, {{'modeData', 'keyPressing'}}
-    return saved, {{"field", "cur", "curX", "curY", "nextQueue", "holdQueue", "ghoY", "stat"}}, {}
+    return saved, {{"field", "visTime", "cur", "curX", "curY", "nextQueue", "holdQueue", "ghoY", "stat"}}, {}
 end
 
 function commit(P)
