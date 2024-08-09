@@ -341,33 +341,8 @@ return {
     task=function(P)
         -- Override Attack send function to be instant
         function P:attack(R,send,time,line,fromStream)
-            if GAME.net then
-                if self.type=='human' then-- Local player attack others
-                    table.insert(GAME.rep,self.frameRun)
-                    table.insert(GAME.rep,
-                        R.sid+
-                        send*0x100+
-                        time*0x10000+
-                        line*0x100000000+
-                        0x2000000000000
-                    )
-                    self:createBeam(R,send)
-                end
-                if fromStream and R.type=='human' then-- Local player receiving lines
-                    table.insert(GAME.rep,R.frameRun)
-                    table.insert(GAME.rep,
-                        self.sid+
-                        send*0x100+
-                        time*0x10000+
-                        line*0x100000000+
-                        0x1000000000000
-                    )
-                end
-            end
-            if not fromStream then
-                R:receive(self,send,time,line)
-                self:createBeam(R,send)
-            end
+            R:receive(self,send,time,line)
+            self:createBeam(R,send)
         end
 
         -- Generate the custom RNG generators for each player
