@@ -733,12 +733,12 @@ function Player:extraEventWithSource(eventName,source,...)
     -- Call the handler for the player getting the event
     GAME.curMode.extraEventHandler[eventName](self,source,...)
 
-    if not P.NET and P.sid == source.sid then
+    if not self.NET and self.sid == source.sid then
         -- Add the event to the replay of all other players as well, since this won't be triggered by Stream
         for i=1,#PLAYERS do
             local R=PLAYERS[i]
-            if P.sid ~= R.sid then
-                R:extraEventWithSource(eventName,P,unpack(paramList))
+            if self.sid ~= R.sid then
+                R:extraEventWithSource(eventName,source,...)
             end
         end
     end
@@ -2732,18 +2732,29 @@ local function update_streaming(P)
         elseif event<=128 then-- Custom Event
             local eventName=P.gameEnv.extraEvent[event-64][1]
             local eventParamCount=P.gameEnv.extraEvent[event-64][2]
+            local eventSource = P.stream[P.streamProgress+2]
             local paramList={}
             for i=1,eventParamCount do
-                ins(paramList,P.stream[P.streamProgress+1+i])
+                ins(paramList,P.stream[P.streamProgress+2+i])
             end
-            P.streamProgress=P.streamProgress+eventParamCount
-            -- Call the event handler for this player, since it's already in the replay
-            GAME.curMode.extraEventHandler[eventName](P,P,...)
-            -- Add the event to the replay of all other players
+            P.streamProgress=P.streamProgress+1+eventParamCount
+            local source = nil
             for i=1,#PLAYERS do
                 local R=PLAYERS[i]
-                if P.sid ~= R.sid then
-                    R:extraEventWithSource(eventName,P,unpack(paramList))
+                if R.sid == eventSource then
+                    source = P
+                end
+            end
+            -- Call the event handler for this player
+            GAME.curMode.extraEventHandler[eventName](P,source,paramList)
+            -- If the event source is the player currently recieving the event, this is the original
+            -- Thus, the event should be triggered on the active player
+            if P.sid == eventSource then
+                for i=1,#PLAYERS do
+                    local R=PLAYERS[i]
+                    if R.type == 'human' then
+                        R:extraEventWithSource(eventName,P,unpack(paramList))
+                    end
                 end
             end
         end
