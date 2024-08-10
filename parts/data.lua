@@ -269,7 +269,6 @@ function DATA.dumpRecording(list,ptr)
     local out=""
     local buffer=""
     if not ptr then ptr=1 end
-    local prevFrm=list[ptr-2] or 0
     while list[ptr] do
         -- Flush buffer
         if #buffer>10 then
@@ -277,16 +276,8 @@ function DATA.dumpRecording(list,ptr)
             buffer=""
         end
 
-        -- Encode time
-        local t=list[ptr]-prevFrm
-        prevFrm=list[ptr]
-        buffer=buffer.._encode(t)
-
-        -- Encode event
-        buffer=buffer.._encode(list[ptr+1])
-
-        -- Step
-        ptr=ptr+2
+        buffer=buffer.._encode(list[ptr])
+        ptr=ptr+1
     end
     return out..buffer,ptr
 end
@@ -294,16 +285,10 @@ function DATA.pumpRecording(str,L)
     local len=#str
     local p=1
 
-    local curFrm=L[#L-1] or 0
     while p<=len do
-        local code,event
-        -- Read delta time
+        local code
         code,p=_decode(str,p)
-        curFrm=curFrm+code
-        ins(L,curFrm)
-
-        event,p=_decode(str,p)
-        ins(L,event)
+        ins(L,code)
     end
 end
 do-- function DATA.saveReplay()

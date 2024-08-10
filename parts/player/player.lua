@@ -702,6 +702,10 @@ function Player:_triggerEvent(eventName)
     end
 end
 function Player:extraEvent(eventName,...)
+    self:extraEventWithSource(eventName,self,...)
+end
+
+function Player:extraEventWithSource(eventName,source,...)
     if not (GAME.curMode.extraEvent and GAME.curMode.extraEventHandler) then return end
     local list=GAME.curMode.extraEvent
     local eventID
@@ -719,17 +723,24 @@ function Player:extraEvent(eventName,...)
     -- Write to stream
     if self.type=='human' then
         ins(GAME.rep,self.frameRun)
-        ins(GAME.rep,eventID)
+        ins(GAME.rep,eventID + 64)
         local data={...}
         for i=1,#data do
             ins(GAME.rep,data[i])
         end
     end
 
-    -- Trigger for everyone
-    for i=1,#PLAYERS do
-        local R=PLAYERS[i]
-        GAME.curMode.extraEventHandler[eventName](R,self,...)
+    -- Call the handler for the player getting the event
+    GAME.curMode.extraEventHandler[eventName](self,source,...)
+
+    if not P.NET and P.sid == source.sid then
+        -- Add the event to the replay of all other players as well, since this won't be triggered by Stream
+        for i=1,#PLAYERS do
+            local R=PLAYERS[i]
+            if P.sid ~= R.sid then
+                R:extraEventWithSource(eventName,P,unpack(paramList))
+            end
+        end
     end
 end
 
@@ -2726,7 +2737,15 @@ local function update_streaming(P)
                 ins(paramList,P.stream[P.streamProgress+1+i])
             end
             P.streamProgress=P.streamProgress+eventParamCount
-            P:extraEvent(eventName,unpack(paramList))
+            -- Call the event handler for this player, since it's already in the replay
+            GAME.curMode.extraEventHandler[eventName](P,P,...)
+            -- Add the event to the replay of all other players
+            for i=1,#PLAYERS do
+                local R=PLAYERS[i]
+                if P.sid ~= R.sid then
+                    R:extraEventWithSource(eventName,P,unpack(paramList))
+                end
+            end
         end
         P.streamProgress=P.streamProgress+2
         eventTime=P.stream[P.streamProgress]
