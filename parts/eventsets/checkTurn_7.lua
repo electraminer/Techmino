@@ -516,7 +516,7 @@ return {
         -- Clear saved garbage
         P.modeData.speculativeAtk = {}
         -- Eliminate player if they have no stocks left
-        if P.result then
+        if P.life == 0 then
             P:extraEvent('removePlayer', P.sid)
         end
     end,
