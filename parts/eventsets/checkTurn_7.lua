@@ -229,7 +229,7 @@ end
 
 local function undoAtk(P)
     local atk = table.remove(P.atkBuffer, #P.atkBuffer)
-    P.atkBufferSum.amount = P.atkBufferSum.amount - atk
+    P.atkBufferSum = P.atkBufferSum - atk.amount
 end
 
 -- Generate a unique RNG queue for each player
@@ -346,6 +346,7 @@ function initSpeedSettings(P)
     P.gameEnv.lock = 1e99
     P.gameEnv.garbageSpeed = 1e99
     P.gameEnv.pushSpeed = 1e99
+    p.gameEnv.holdCount = 1e99
 end
 
 -- Initialize the main chess clock for a player
