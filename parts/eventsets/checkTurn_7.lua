@@ -202,13 +202,13 @@ function removePlayer(P, player)
         P.modeData.turn = 1
     end
     
-    MES.new('', "Your sid "..i)
+    MES.new('', "Your sid "..P.sid)
     for i,p in ipairs(P.modeData.turnOrder) do
         MES.new('', "Position "..i.." player "..p)
     end
     MES.new('', "Turn position "..P.modeData.turn.." player "..P.modeData.turnOrder[P.modeData.turn])
     if P.modeData.turnOrder[P.modeData.turn] == P.sid then
-        beginTurn(P)
+        startTurn(P)
     end
 end
 
@@ -223,7 +223,7 @@ local function getTarget(P)
     if turn > #P.modeData.turnOrder then
         turn = 1
     end
-    MES.new('', "Your sid "..i)
+    MES.new('', "Your sid "..P.sid)
     for i,p in ipairs(P.modeData.turnOrder) do
         MES.new('', "Position "..i.." player "..p)
     end
