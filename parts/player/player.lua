@@ -2852,6 +2852,7 @@ function Player:_die()
             self.visTime[i][j]=min(self.visTime[i][j],20)
         end
     end
+    MES.new('', "Removed player "..self.sid)
     self:extraEvent('removePlayer', self.sid)
     if GAME.net then
         if self.id==1 then

@@ -5,7 +5,7 @@ return {
         infHold=true,
         pushSpeed=15,
         garbageSpeed=1e99,
-        eventSet='checkTurn_7',
+        eventSet='turnBased',
         bg='rainbow',bgm='push',
     },
     load=function()

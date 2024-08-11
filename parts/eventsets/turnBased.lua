@@ -1,39 +1,3 @@
-local SLOW_TIME_CONTROLS = {
-    mainTime = 60 * 60 * 15,
-    turnTime = 60 * 30,
-    periodTime = 60 * 30,
-    increment = false,
-    periods = 5,
-    autoCommit = false,
-}
-
-local DEFAULT_TIME_CONTROLS = {
-    mainTime = 60 * 60 * 10,
-    turnTime = 60 * 15,
-    periodTime = 60 * 15,
-    increment = true,
-    periods = 5,
-    autoCommit = false,
-}
-
-local RAPID_TIME_CONTROLS = {
-    mainTime = 60 * 60 * 5,
-    turnTime = 60 * 10,
-    periodTime = 60 * 10,
-    increment = true,
-    periods = 5,
-    autoCommit = false,
-}
-
-local BLITZ_TIME_CONTROLS = {
-    mainTime = 60 * 60 * 3,
-    turnTime = 60 * 5,
-    periodTime = 60 * 10,
-    increment = true,
-    periods = 5,
-    autoCommit = true,
-}
-
 function getInitialPlayers()
     local players = {}
     for _,P in ipairs(PLAYERS) do
@@ -203,11 +167,6 @@ function removePlayer(P, player)
         P.modeData.turn = 1
     end
     
-    MES.new('', "Your sid "..P.sid)
-    for i,p in ipairs(P.modeData.turnOrder) do
-        MES.new('', "Position "..i.." player "..p)
-    end
-    MES.new('', "Turn position "..P.modeData.turn.." player "..P.modeData.turnOrder[P.modeData.turn])
     if P.modeData.turnOrder[P.modeData.turn] == P.sid then
         startTurn(P)
     end
@@ -224,11 +183,6 @@ local function getTarget(P)
     if turn > #P.modeData.turnOrder then
         turn = 1
     end
-    MES.new('', "Your sid "..P.sid)
-    for i,p in ipairs(P.modeData.turnOrder) do
-        MES.new('', "Position "..i.." player "..p)
-    end
-    MES.new('', "Target position "..turn.." player "..P.modeData.turnOrder[turn])
     -- TODO make this work in teams mode
     return P.modeData.turnOrder[turn]
 end
@@ -249,13 +203,6 @@ function startTurn(P)
     -- Clear savestates
     P.modeData.savestates = {}
 
-    if P.modeData.fakedQueue == true then
-        -- Remove the fake piece from the start of the next queue
-        table.remove(P.nextQueue, 1)
-        P.modeData.fakedQueue = false
-        saveState(P)
-    end
-    
     P.control = true
     P.waiting = 0
 end
@@ -411,9 +358,6 @@ end
 -- Reset the chess clock for a player's next turn
 function initTurnTimer(P)
     -- Ensure period is advanced if the main time is 0, for instance if playing with no main time
-    if P.modeData.mainTime == 0 and P.modeData.period == 0 then
-        advancePeriod(P)
-    end
     if P.modeData.period > P.gameEnv.timeControls.periods then
         -- Sudden Death
         P.modeData.turnTime = 0
@@ -432,8 +376,14 @@ end
 
 -- Tick the player's chess clock each frame
 function tickChessTimer(P)
+    if P.modeData.mainTime == 0 and P.modeData.period == 0 then
+        advancePeriod(P)
+    end
     if P.modeData.turnTime > 0 then
         P.modeData.turnTime = P.modeData.turnTime - 1
+        if P.modeData.turnTime == 0 and P.modeData.mainTime > 0 then
+            SFX.play('warn_1')
+        end
     elseif P.modeData.mainTime > 0 then
         P.modeData.mainTime = P.modeData.mainTime - 1
     elseif P.modeData.period < P.gameEnv.timeControls.periods then
@@ -448,6 +398,7 @@ end
 
 -- Advance the player's period to raise the speed level
 function advancePeriod(P)
+    SFX.play('reach')
     -- Advance period and reset period time
     P.modeData.turnTime = P.gameEnv.timeControls.periodTime
     P.modeData.period = P.modeData.period + 1
@@ -465,9 +416,10 @@ function advancePeriod(P)
     P.dropDelay = gravity
 end
 
-return {
+function turnBased(timeControls) return {
+    timeControls = timeControls,
+
     task = function(P)
-        P.gameEnv.timeControls = DEFAULT_TIME_CONTROLS
 
         initMainTimer(P)
         initTurnTimer(P)
@@ -480,19 +432,18 @@ return {
         initTargeting(P)
         
         P.modeData.savestates = {}
+        saveState(P)
 
         -- Wait until the countdown finishes
-        while P.frameRun < 179 do
+        while P.frameRun < 180 do
             coroutine.yield()
+            P.control = false
         end
-        P.control = false
+        loadState(P)
+        P.ghoY = -100
 
         P.modeData.players = getInitialPlayers()
         initTurnOrder(P)
-
-        -- Fake the queue for non-active players so you can see the piece that was spawned
-        table.insert(P.nextQueue, 1, P.cur)
-        P.modeData.fakedQueue = true
 
         if P.modeData.turnOrder[1] == P.sid then
             startTurn(P)
@@ -510,7 +461,9 @@ return {
     end,
     
     hook_spawn = function(P)
-        saveState(P)
+        if P.frameRun > 180 then
+            saveState(P)
+        end
         tryAutoCommit(P)
     end,
 
@@ -618,10 +571,11 @@ return {
             end
         end
         
-        local function drawTimeAlert(alert, caption, frames)
+        local function drawTimeAlert(alert, caption, unit, frames)
             GC.push('transform')
-                -- Center of the field
-                GC.translate(300,300)
+                -- Below the hold box
+                GC.translate(62,190)
+                GC.scale(0.8,0.8,0.8)
         
                 -- Default color is white
                 local r,g,b = 1,1,1
@@ -635,9 +589,13 @@ return {
                 end
         
                 -- Fading caption
-                setFont(30)
+                setFont(25)
                 GC.setColor(r,g,b,frames/60)
-                GC.mStr(caption,0,-100)
+                GC.mStr(caption,0,-90)
+                -- Unit
+
+                GC.setColor(r,g,b,frames/60)
+                GC.mStr(unit,0,50)
         
                 -- Special styles for 5, 4, 3, 2, 1
                 local fancy = false
@@ -651,7 +609,6 @@ return {
                 elseif alert == "1" then
                     if frames > 45 then GC.scale(1,1+(frames/15-3)^2) end
                 end
-        
         
                 setFont(100)
         
@@ -675,18 +632,20 @@ return {
 
 		-- Display time remaining
         setFont(30)
-        if P.modeData.period > P.gameEnv.timeControls.periods then
-            GC.mStr("DEATH", 539, 465)
-            drawDial(539, 545, 0, 0)
-        elseif P.modeData.period > 0 then
-            GC.mStr("PERIOD "..P.modeData.period, 539, 465)
-            drawDial(539, 545, P.modeData.turnTime, P.modeData.turnTime / P.gameEnv.timeControls.periodTime)
-        elseif P.modeData.turnTime == 0 then
-            GC.mStr(toHumanTime(P.modeData.mainTime), 539, 465)
-            drawDial(539, 545, 0, P.modeData.mainTime / P.gameEnv.timeControls.mainTime)
-        else
-            GC.mStr(toHumanTime(P.modeData.mainTime), 539, 465)
-            drawDial(539, 545, P.modeData.turnTime, P.modeData.turnTime / P.gameEnv.timeControls.turnTime)
+        if P.modeData.turnTime < 1e98 then
+            if P.modeData.period > P.gameEnv.timeControls.periods then
+                GC.mStr("DEATH", 539, 465)
+                drawDial(539, 545, 0, 0)
+            elseif P.modeData.period > 0 then
+                GC.mStr("PERIOD "..P.modeData.period, 539, 465)
+                drawDial(539, 545, P.modeData.turnTime, P.modeData.turnTime / P.gameEnv.timeControls.periodTime)
+            elseif P.modeData.turnTime == 0 then
+                GC.mStr(toHumanTime(P.modeData.mainTime), 539, 465)
+                drawDial(539, 545, 0, P.modeData.mainTime / P.gameEnv.timeControls.mainTime)
+            else
+                GC.mStr(toHumanTime(P.modeData.mainTime), 539, 465)
+                drawDial(539, 545, P.modeData.turnTime, P.modeData.turnTime / P.gameEnv.timeControls.turnTime)
+            end
         end
 
         if not P.control then
@@ -734,35 +693,67 @@ return {
 
         -- Get the time alert if there is any
         local alert = nil
+        local unit = ""
         if hours >= 1 then
             if minutes == 0 and seconds == 0 then
-                alert = string.format("%dh", hours)
+                alert = string.format("%d", hours)
+                unit = "HOURS"
+                if hours == 1 then
+                    unit = "HOUR"
+                end
             end
         elseif minutes >= 1 then
             if (minutes == 30 or minutes == 20 or minutes == 15 or minutes == 10 or minutes <= 5) and seconds == 0 then
-                alert = string.format("%d:00", minutes)
+                alert = string.format("%d", minutes)
+                unit = "MINUTES"
+                if minutes == 1 then
+                    alert = "60"
+                    unit = "SECONDS"
+                end
             end
         elseif seconds == 30 or seconds == 20 or seconds == 15 or seconds == 10 or seconds <= 5 then
             alert = string.format("%d", seconds)
+            unit = "SECONDS"
+            if second == 1 then
+                unit = "SECOND"
+            end
         end
 
         -- If at the start of a new period, announce the speed increase
         if P.modeData.period ~= P.modeData.startingPeriod then
             if P.modeData.turnTime + 60 > P.gameEnv.timeControls.periodTime then
                 caption = "SPEED UP"
-                alert = "LV"..P.modeData.period
+                alert = "L" .. P.modeData.period
+                unit = "LEVEL"
                 if P.modeData.period == P.gameEnv.timeControls.periods then
                     alert = "20G"
                 end
             end
             if P.modeData.period > P.gameEnv.timeControls.periods and P.modeData.turnTime > -60 then
                 caption = "SUDDEN DEATH"
-                alert = ""
+                alert = "SD"
                 frames = P.modeData.turnTime + 60
+                unit = "GOOD LUCK!"
             end
         end
         if alert then
-            drawTimeAlert(alert, caption, frames)
+            drawTimeAlert(alert, caption, unit, frames)
+            if frames == 59 then
+                SFX.play('touch')
+            end
         end
     end,
-}
+
+    withTimeControls=function(tc)
+        return turnBased(tc)
+    end,
+} end
+
+return turnBased({
+    mainTime = 60 * 60 * 10,
+    turnTime = 60 * 15,
+    periodTime = 60 * 15,
+    increment = true,
+    periods = 5,
+    autoCommit = false,
+})
