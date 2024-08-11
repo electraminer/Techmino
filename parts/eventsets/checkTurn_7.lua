@@ -12,6 +12,7 @@ function getInitialPlayers()
     for _,P in ipairs(PLAYERS) do
         table.insert(players, P.sid)
     end
+    table.sort(players)
     return players
 end
 
@@ -114,7 +115,7 @@ local function savestateCtx(P)
         'nextQueue', 'holdQueue', 'stat',
         'combo', 'b2b', 'b3b',
         'atkBuffer', 'atkBufferSum', 'netAtk',
-        'waiting',
+        'waiting', 'holdTime'
     }, false}
     local blacklist = {false, false}
     return saved, whitelist, blacklist
@@ -217,7 +218,6 @@ function undo(P)
     if #P.modeData.savestates >= 2 then
         local savestate = P.modeData.savestates[#P.modeData.savestates]
         if savestate.atkTarget ~= 0 then
-            MES.new('', "UndoAtk"..savestate.atkTarget)
             P:extraEvent('undoAtk', savestate.atkTarget)
         end
         P.modeData.savestates[#P.modeData.savestates] = nil
@@ -228,7 +228,8 @@ function undo(P)
 end
 
 local function undoAtk(P)
-    table.remove(P.atkBuffer, #P.atkBuffer)
+    local atk = table.remove(P.atkBuffer, #P.atkBuffer)
+    P.atkBufferSum.amount = P.atkBufferSum.amount - atk
 end
 
 -- Generate a unique RNG queue for each player

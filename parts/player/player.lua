@@ -2887,6 +2887,7 @@ function Player:update(dt)
                         end
                     end
                     dataDelta=#self.stream-self.streamProgress
+                    print(#self.stream .. " " .. self.streamProgress .. " " .. dataDelta)
                 end
                 if dataDelta>0 then
                     for _=1,
