@@ -189,7 +189,7 @@ end
 
 function removePlayer(P, player)
     local index = 0
-    for i,p in P.modeData.turnOrder do
+    for i,p in ipairs(P.modeData.turnOrder) do
         if player == p then
             index = i
         end
