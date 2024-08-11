@@ -486,6 +486,10 @@ return {
     hook_die = function(P)
         -- Clear saved garbage
         P.modeData.speculativeAtk = {}
+        -- Eliminate player if they have no stocks left
+        if P.result then
+            P:extraEvent('removePlayer', P.sid)
+        end
     end,
     
     fkey1 = function(P)
@@ -499,6 +503,7 @@ return {
     extraEvent = {
         {'passTurn', 0},
         {'undoAtk', 1},
+        {'removePlayer', 1},
     },
 
     extraEventHandler = {
@@ -509,6 +514,9 @@ return {
             if P.sid == target then
                 undoAtk(P)
             end
+        end,
+        removePlayer = function(P, source, player)
+            removePlayer(P, player)
         end,
     },
 
