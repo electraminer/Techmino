@@ -2907,6 +2907,7 @@ function Player:update(dt)
                         dataDelta<126 and 10 or
                         20
                     do
+                        if self.streamProgress>#self.stream then break end
                         update_streaming(self)
                         update_alive(self,dt)
                     end
