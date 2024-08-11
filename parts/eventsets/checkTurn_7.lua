@@ -198,6 +198,15 @@ function removePlayer(P, player)
         P.modeData.turn = P.modeData.turn - 1
     end
     table.remove(P.modeData.turnOrder, index)
+    if P.modeData.turn > #P.modeData.turnOrder then
+        P.modeData.turn = 1
+    end
+    
+    MES.new('', "Your sid "..i)
+    for i,p in ipairs(P.modeData.turnOrder) do
+        MES.new('', "Position "..i.." player "..p)
+    end
+    MES.new('', "Turn position "..P.modeData.turn.." player "..P.modeData.turnOrder[P.modeData.turn])
     if P.modeData.turnOrder[P.modeData.turn] == P.sid then
         beginTurn(P)
     end
@@ -214,6 +223,11 @@ local function getTarget(P)
     if turn > #P.modeData.turnOrder then
         turn = 1
     end
+    MES.new('', "Your sid "..i)
+    for i,p in ipairs(P.modeData.turnOrder) do
+        MES.new('', "Position "..i.." player "..p)
+    end
+    MES.new('', "Target position "..turn.." player "..P.modeData.turnOrder[turn])
     -- TODO make this work in teams mode
     return P.modeData.turnOrder[turn]
 end
