@@ -67,7 +67,8 @@ return {
     hook_die={},
     task={},
     extraEvent={
-        {'attack',4},
+        {'attack', 4},
+        {'removePlayer', 1},
     },
     extraEventHandler={
         attack=function(P,P2,...)

@@ -2852,6 +2852,7 @@ function Player:_die()
             self.visTime[i][j]=min(self.visTime[i][j],20)
         end
     end
+    self:extraEvent('removePlayer', self.sid)
     if GAME.net then
         if self.id==1 then
             ins(GAME.rep,self.frameRun)
@@ -2887,7 +2888,6 @@ function Player:update(dt)
                         end
                     end
                     dataDelta=#self.stream-self.streamProgress
-                    print(#self.stream .. " " .. self.streamProgress .. " " .. dataDelta)
                 end
                 if dataDelta>0 then
                     for _=1,

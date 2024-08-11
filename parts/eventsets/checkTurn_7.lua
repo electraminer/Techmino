@@ -155,6 +155,7 @@ function saveState(P)
         state = state,
         atkTarget = P.modeData.lastTarget,
     })
+    P.modeData.lastTarget = 0
 end
 
 function loadState(P)
@@ -230,6 +231,15 @@ local function getTarget(P)
     MES.new('', "Target position "..turn.." player "..P.modeData.turnOrder[turn])
     -- TODO make this work in teams mode
     return P.modeData.turnOrder[turn]
+end
+
+function initTargeting(P)
+    -- Override attacks to choose a deterministic target and save it
+    function P:attack(target, send, time, line)
+        local target = getTarget(P)
+        self:extraEvent('attack', target, send, time, line)
+        P.modeData.lastTarget = target
+    end
 end
 
 function startTurn(P)
@@ -466,9 +476,9 @@ return {
         initRNG(P)
         initSpeculativeNext(P)
         initSpeculativeAtk(P)
+
+        initTargeting(P)
         
-        -- Disable sending garbage
-        P.strength = -8
         P.modeData.savestates = {}
 
         -- Wait until the countdown finishes
@@ -505,17 +515,6 @@ return {
     end,
 
     hook_drop = function(P)
-        -- Send attack
-        local totalAtk = -P.lastPiece.atk
-        local cancelledAtk = P:cancel(totalAtk)
-        local sentAtk = totalAtk - cancelledAtk
-        local target = nil
-        if sentAtk > 0 then
-            target = getTarget(P)
-            P:attack(getPlayerObject(target), sentAtk, 1, 1023) 
-        end
-        P.modeData.lastTarget = target
-
         -- End turn
         local turnPieces = P.stat.piece - P.modeData.startedTurnAtPiece
         if turnPieces == 7 then
@@ -529,10 +528,6 @@ return {
     hook_die = function(P)
         -- Clear saved garbage
         P.modeData.speculativeAtk = {}
-        -- Eliminate player if they have no stocks left
-        if P.life == 0 then
-            P:extraEvent('removePlayer', P.sid)
-        end
     end,
     
     fkey1 = function(P)
@@ -546,7 +541,6 @@ return {
     extraEvent = {
         {'passTurn', 0},
         {'undoAtk', 1},
-        {'removePlayer', 1},
     },
 
     extraEventHandler = {
@@ -752,7 +746,7 @@ return {
             alert = string.format("%d", seconds)
         end
 
-        -- If at the start of a new byo-yomi period, announce the speed increase
+        -- If at the start of a new period, announce the speed increase
         if P.modeData.period ~= P.modeData.startingPeriod then
             if P.modeData.turnTime + 60 > P.gameEnv.timeControls.periodTime then
                 caption = "SPEED UP"
