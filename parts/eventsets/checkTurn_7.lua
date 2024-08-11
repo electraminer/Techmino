@@ -1,3 +1,12 @@
+local SLOW_TIME_CONTROLS = {
+    mainTime = 60 * 60 * 15,
+    turnTime = 60 * 30,
+    periodTime = 60 * 30,
+    increment = false,
+    periods = 5,
+    autoCommit = false,
+}
+
 local DEFAULT_TIME_CONTROLS = {
     mainTime = 60 * 60 * 10,
     turnTime = 60 * 15,
@@ -5,6 +14,24 @@ local DEFAULT_TIME_CONTROLS = {
     increment = true,
     periods = 5,
     autoCommit = false,
+}
+
+local RAPID_TIME_CONTROLS = {
+    mainTime = 60 * 60 * 5,
+    turnTime = 60 * 10,
+    periodTime = 60 * 10,
+    increment = true,
+    periods = 5,
+    autoCommit = false,
+}
+
+local BLITZ_TIME_CONTROLS = {
+    mainTime = 60 * 60 * 3,
+    turnTime = 60 * 5,
+    periodTime = 60 * 10,
+    increment = true,
+    periods = 5,
+    autoCommit = true,
 }
 
 function getInitialPlayers()
@@ -346,7 +373,7 @@ function initSpeedSettings(P)
     P.gameEnv.lock = 1e99
     P.gameEnv.garbageSpeed = 1e99
     P.gameEnv.pushSpeed = 1e99
-    p.gameEnv.holdCount = 1e99
+    P.gameEnv.holdCount = 1e99
 end
 
 -- Initialize the main chess clock for a player
