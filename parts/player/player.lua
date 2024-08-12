@@ -2701,40 +2701,27 @@ local function update_alive(P,dt)
                 break-- goto THROW_stop
             end
 
-            -- Natural block falling
+            -- Natural block falling - updated to support decimal numbers
             if P.cur then
                 if P.curY>P.ghoY then
-                    local D=P.dropDelay
-                    local dist-- Drop distance
-                    if D>1 then
-                        D=D-1
-                        if P.keyPressing[7] and P.downing>=ENV.sddas then
-                            D=D-ceil(ENV.drop/ENV.sdarr)
-                        end
-                        if D<=0 then
-                            dist=1
-                            P.dropDelay=(D-1)%ENV.drop+1
-                        else
-                            P.dropDelay=D
-                            break-- goto THROW_stop
-                        end
-                    elseif D==1 then-- We don't know why dropDelay is 1, so checking ENV.drop>1 is neccessary
-                        if ENV.drop>1 and P.downing>=ENV.sddas and (P.downing-ENV.sddas)%ENV.sdarr==0 then
-                            dist=2
-                        else
-                            dist=1
-                        end
-                        -- Reset drop delay
-                        P.dropDelay=ENV.drop
-                    else-- High gravity case (>1G)
-                        -- Add extra 1 if time to auto softdrop
-                        if P.downing>ENV.sddas and (P.downing-ENV.sddas)%ENV.sdarr==0 then
-                            dist=1/D+1
-                        else
-                            dist=1/D
-                        end
+                    P.dropDelay = P.dropDelay - 1
+                    local dist = 0-- Drop distance
+                    if ENV.drop == 0 then -- 20G
+                        dist = 1e99
+                        P.dropDelay = 0
+                    elseif P.dropDelay < 0 then -- Calculate number of drops
+                        dist = ceil(-P.dropDelay / ENV.drop)
+                        P.dropDelay = P.dropDelay + ENV.drop * dist
                     end
 
+                    if P.downing>ENV.sddas then
+                        if ENV.sdarr == 0 then
+                            dist = 1e99
+                        elseif (P.downing-ENV.sddas)%ENV.sdarr==0 then
+                            dist = dist + 1
+                        end
+                    end
+                   
                     -- Limit dropping to ghost at max
                     dist=min(dist,P.curY-P.ghoY)
 

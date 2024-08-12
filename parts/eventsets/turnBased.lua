@@ -409,11 +409,12 @@ function advancePeriod(P)
     local progression = (P.modeData.period - 1) / (P.gameEnv.timeControls.periods - 1)
     local blocksPerSecond = 2 * 10 ^ (progression * 2.5)
     local gravity = 60 / blocksPerSecond
-    if progression == 2.5 then
+    if P.modeData.period >= P.gameEnv.timeControls.periods then
         gravity = 0
     end
     P.gameEnv.drop = gravity
     P.dropDelay = gravity
+    MES.new('', gravity)
 end
 
 function turnBased(timeControls) return {
