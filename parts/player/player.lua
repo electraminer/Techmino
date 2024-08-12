@@ -2789,7 +2789,7 @@ local function update_alive(P,dt)
 end
 local function update_streaming(P)
     local eventTime=P.stream[P.streamProgress]
-    while eventTime and P.frameRun==eventTime or eventTime==0 do
+    while eventTime and P.frameRun<=eventTime or eventTime==0 do
         local event=P.stream[P.streamProgress+1]
         if event==0 then-- Just wait
         elseif event<=32 then-- Press key
@@ -2847,7 +2847,7 @@ function Player:_die()
     self.b2b=0
     self.tasks={}
     self:clearAttackBuffer()
-    for i=1,#self.visTime do
+    for i=1,#self.visTime do    
         for j=1,10 do
             self.visTime[i][j]=min(self.visTime[i][j],20)
         end
