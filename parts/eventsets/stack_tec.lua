@@ -11,8 +11,6 @@ local function _endZone(P)
 	for i,attack in pairs(P.atkBuffer) do
 		attack.stalledByZone = nil
 	end
-	-- Restore the player's attack power
-	P.strength = 0
 	-- Separate the lines attack into chunks, more quarter zones get bonus chunks
 	local linesAttackChunks = P.modeData.Zone + 2
 	-- Chunks grow for larger zones
@@ -37,16 +35,15 @@ local function _endZone(P)
 	local _test = P.modeData.timePerQuarter
 	-- Send each line
 	local totalSendTime = TIME_PER_QUARTER
+	-- Exit zone and send the attack
+	P.modeData.Zone=0
 	for i,attack in ipairs(P.modeData.builtAttack) do
 		local T = randomTarget(P)
 		local cancelledAttack = P:cancel(attack)
 		local sendTime = totalSendTime * i / #P.modeData.builtAttack -- Lines come in over time
 		P:attack(T,attack - cancelledAttack, sendTime, generateLine(P.atkRND:random(10)))
 	end
-	-- Do we need to add the attack statistics for this?
-	--above code needs testing outside of singleplayer
 	P.modeData.builtAttack={}
-	P.modeData.Zone=0
 	
 	if P.cur then
 		P:freshMoveBlock ('push')
@@ -80,6 +77,16 @@ return {
 		P.modeData.builtAttack={}
 		P.modeData.timePerQuarter = 0
 
+		-- Replace attack function
+		function P:attack(target, send, time, line)
+			if P.modeData.Zone > 0 then
+				-- Total up sent attack
+				table.insert(P.modeData.builtAttack, send)
+			else
+				self:extraEvent('attack', target.sid, send, time, line)
+			end
+		end
+
 		while true do
 			for i,attack in pairs(P.atkBuffer) do
 				-- Make sure attacks in zone are stalled
@@ -94,6 +101,10 @@ return {
 				local zoneLength = (P.modeData.Zone)*TIME_PER_QUARTER
 				local zoneTimeElapsed = P.stat.frame - P.modeData.FrameZoneStarted
 				local zoneTimeLeft = zoneLength - zoneTimeElapsed
+				if zoneTimeElapsed == 1 or zoneTimeElapsed == 16 then
+					-- Zone enter SFX
+					SFX.play("reach")
+				end
 				-- Stall attacks in the attack buffer while zone is active
 				for i,attack in pairs(P.atkBuffer) do
 					if not attack.stalledByZone then
@@ -101,9 +112,6 @@ return {
 						attack.stalledCountdown = attack.countdown
 					end
 				end
-				-- Player cannot attack immediately - so their strength is negative to suppress it
-				-- This causes them to deal negative damage, which is instead counted as Zone damage
-				P.strength = -8
 				
 				-- End zone when time runs out
 				if zoneTimeLeft <= -3 * 60 then
@@ -161,10 +169,7 @@ return {
 			local zoneLength = (P.modeData.Zone)*TIME_PER_QUARTER
 			local zoneTimeElapsed = P.stat.frame - P.modeData.FrameZoneStarted
 			local zoneTimeLeft = zoneLength - zoneTimeElapsed
-			-- Total up sent attack
-			if -P.lastPiece.atk > 0 then
-				table.insert(P.modeData.builtAttack, -P.lastPiece.atk)
-			end
+
 			-- Add the cleared lines back underneath the board
 			P:garbageRise(21,c,1023)
 			P.stat.row=P.stat.row-c
@@ -179,21 +184,8 @@ return {
 		elseif c == 0 then
 			-- Process only one line of the garbage queue
 			if P.atkBuffer[1] and P.atkBuffer[1].countdown <= P.gameEnv.garbageSpeed then
-				B = P.cur
-				local incomingLines = P.atkBuffer[1].amount
-				local willDie = B and P:ifoverlap(B.bk,P:getSpawnX(B),P:getSpawnY(B) - incomingLines)
-				-- Automatically use zone to save yourself from certain death
-				-- This feature crashes the AI... 
-				if P.type ~= 'bot' then
-					if willDie and P.modeData.LineTotal>=LINES_PER_QUARTER then
-						P.modeData.Zone=math.floor(P.modeData.LineTotal/LINES_PER_QUARTER)
-						P.modeData.LineTotal=0
-						P.modeData.FrameZoneStarted=P.stat.frame
-					else
-						P.atkBuffer[1].countdown = 0
-						P:garbageRelease()
-					end
-				end
+				P.atkBuffer[1].countdown = 0
+				P:garbageRelease()
 			end
 		end
 		
