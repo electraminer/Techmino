@@ -71,8 +71,12 @@ return {
         {'removePlayer', 1},
     },
     extraEventHandler={
-        attack=function(P,P2,...)
-            P:beAttacked(P2,...)
+        attack=function(P, source, ...)
+            P:beAttacked(source, ...)
+        end,
+
+        removePlayer=function(P, source, ...)
+        
         end,
     },
 
