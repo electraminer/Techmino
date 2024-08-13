@@ -755,6 +755,10 @@ function Player:extraEvent(eventName,...)
         end
     end
 
+    if not SELF then
+        -- If you died before you recieved an attack, don't process it
+        return
+    end
     ins(GAME.rep,SELF.frameRun)
     ins(GAME.rep,64+eventID)
     ins(GAME.rep,self.sid)
