@@ -106,7 +106,9 @@ local function savestateCtx(P)
         'nextQueue', 'holdQueue', 'stat',
         'combo', 'b2b', 'b3b',
         'atkBuffer', 'atkBufferSum', 'netAtk',
-        'waiting', 'holdTime'
+        'waiting', 'holdTime',
+        'spikeTime', 'spike', 'spikeText',
+        'life',
     }, false}
     local blacklist = {false, false}
     return saved, whitelist, blacklist
@@ -200,11 +202,12 @@ function startTurn(P)
     P.modeData.startedTurnAtPiece = P.stat.piece
     P.modeData.startingPeriod = P.modeData.period
     
-    -- Clear savestates
-    P.modeData.savestates = {}
-
     P.control = true
     P.waiting = 0
+
+    -- Clear savestates
+    P.modeData.savestates = {}
+    saveState(P)
 end
 
 function undo(P)
@@ -460,20 +463,14 @@ function turnBased(timeControls) return {
             coroutine.yield()
         end
     end,
-    
-    hook_spawn = function(P)
-        if P.frameRun > 180 then
-            saveState(P)
-        end
-        tryAutoCommit(P)
-    end,
 
     hook_drop = function(P)
         -- End turn
         local turnPieces = P.stat.piece - P.modeData.startedTurnAtPiece
+        P.cur = nil
+        saveState(P)
         if turnPieces == 7 then
             P.waiting = 1e99
-            saveState(P)
         end
         -- Auto commit
         tryAutoCommit(P)
