@@ -164,6 +164,12 @@ return {
 
 	hook_drop=function(P)
 		local c=#P.clearedRow
+		if #P.clearedRow>0 and P.modeData.Zone==0 then
+			P.modeData.LineTotal=P.modeData.LineTotal+#P.clearedRow
+			if P.modeData.LineTotal>LINES_PER_QUARTER*4 then
+				P.modeData.LineTotal=LINES_PER_QUARTER*4
+			end
+		end
 		
 		if P.modeData.Zone>0 then
 			local zoneLength = (P.modeData.Zone)*TIME_PER_QUARTER
@@ -186,13 +192,6 @@ return {
 			if P.atkBuffer[1] and P.atkBuffer[1].countdown <= P.gameEnv.garbageSpeed then
 				P.atkBuffer[1].countdown = 0
 				P:garbageRelease()
-			end
-		end
-		
-		if #P.clearedRow>0 and P.modeData.Zone==0 then
-			P.modeData.LineTotal=P.modeData.LineTotal+#P.clearedRow
-			if P.modeData.LineTotal>LINES_PER_QUARTER*4 then
-				P.modeData.LineTotal=LINES_PER_QUARTER*4
 			end
 		end
 	end,
