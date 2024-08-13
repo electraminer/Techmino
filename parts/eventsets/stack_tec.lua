@@ -183,14 +183,16 @@ return {
 				local incomingLines = P.atkBuffer[1].amount
 				local willDie = B and P:ifoverlap(B.bk,P:getSpawnX(B),P:getSpawnY(B) - incomingLines)
 				-- Automatically use zone to save yourself from certain death
-				-- This feature crashes the AI... why?
-				if willDie and P.modeData.LineTotal>=LINES_PER_QUARTER then
-					P.modeData.Zone=math.floor(P.modeData.LineTotal/LINES_PER_QUARTER)
-					P.modeData.LineTotal=0
-					P.modeData.FrameZoneStarted=P.stat.frame
-				else
-					P.atkBuffer[1].countdown = 0
-					P:garbageRelease()
+				-- This feature crashes the AI... 
+				if P.type ~= 'bot' then
+					if willDie and P.modeData.LineTotal>=LINES_PER_QUARTER then
+						P.modeData.Zone=math.floor(P.modeData.LineTotal/LINES_PER_QUARTER)
+						P.modeData.LineTotal=0
+						P.modeData.FrameZoneStarted=P.stat.frame
+					else
+						P.atkBuffer[1].countdown = 0
+						P:garbageRelease()
+					end
 				end
 			end
 		end
