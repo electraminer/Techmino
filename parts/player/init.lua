@@ -247,6 +247,7 @@ local function _mergeFuncTable(f,L)
     return L
 end
 local hooks = {
+    'task',
     'mesDisp',
     'hook_left',
     'hook_left_manual',
@@ -275,7 +276,23 @@ local function _applyGameEnv(P)-- Finish gameEnv processing
             local eventSet=require('parts.eventsets.'..ENV.eventSet)
             if eventSet then
                 for k,v in next,eventSet do
-                    if TABLE.find(hooks,k) then
+                    if k == "extraEvent" then
+                        for _,ev in ipairs(v) do
+                            table.insert(ENV.extraEvent, ev)
+                        end
+                    elseif k == "extraEventHandler" then
+                        for ev,handler in pairs(v) do
+                            if ENV.extraEventHandler[ev] then
+                                local prevHandler = ENV.extraEventHandler[ev]
+                                ENV.extraEventHandler[ev] = function(...)
+                                    prevHandler(...)
+                                    handler(...)
+                                end
+                            else
+                                ENV.extraEventHandler[ev] = handler
+                            end
+                        end
+                    elseif TABLE.find(hooks,k) then
                         _mergeFuncTable(v,ENV[k])
                     elseif type(v)=='table' then
                         ENV[k]=TABLE.copy(v)
