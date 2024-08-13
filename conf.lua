@@ -13,7 +13,7 @@ if OS=='Web' then
 end
 
 function love.conf(t)
-    local identity='Techmino'
+    local identity='Techmino TEC'
     local msaa=0
     local portrait=false
 
