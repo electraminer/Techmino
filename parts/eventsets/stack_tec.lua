@@ -69,6 +69,7 @@ local function _drawMeter(x,y,meters)
 end
 
 return {
+	-- layout = "royale",
 	fieldH=20,
 	task=function(P)
 		P.modeData.LineTotal=0
@@ -117,6 +118,11 @@ return {
 				if zoneTimeLeft <= -3 * 60 then
 					_endZone(P)
 				end
+				P.modeData.wait = 0
+				P.modeData.fall = 0
+			else
+				P.modeData.wait = 4
+				P.modeData.fall = 20
 			end
 			
 			coroutine.yield()
