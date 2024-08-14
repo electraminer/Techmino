@@ -118,11 +118,11 @@ return {
 				if zoneTimeLeft <= -3 * 60 then
 					_endZone(P)
 				end
-				P.modeData.wait = 0
-				P.modeData.fall = 0
+				P.gameEnv.wait = 0
+				P.gameEnv.fall = 0
 			else
-				P.modeData.wait = 4
-				P.modeData.fall = 20
+				P.gameEnv.wait = 4
+				P.gameEnv.fall = 20
 			end
 			
 			coroutine.yield()
