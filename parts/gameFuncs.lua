@@ -370,29 +370,31 @@ function playClearSFX(cc)
     if cc<=0 or cc%1~=0 then return end
     if cc<=4 then
         SFX.play('clear_'..cc)
-    elseif cc<=6 then
-        SFX.play('clear_4')
     elseif cc<=12 then
-        SFX.play('clear_4',.8)
-        if cc<=9 then
-            Snd('bass','A3','E4')
-        else
-            Snd('bass','A3','E4','A4')
+        SFX.play('clear_4', .8)
+        if cc==5      then Snd('bass', 'A3')
+        elseif cc==6  then Snd('bass', 'B3')
+        elseif cc==7  then Snd('bass', 'A3','C#4')
+        elseif cc==8  then Snd('bass', 'A3','D4')
+        elseif cc==9  then Snd('bass', 'A3','C#4', 'E4')
+        elseif cc==10 then Snd('bass', 'A3', 'E4','G#4')
+        elseif cc==11 then Snd('bass', 'A3', 'E4', 'A4')
+        else               Snd('bass', 'A3', 'E4','C#5')
         end
     elseif cc<=16 then
         SFX.play('clear_5',.7)
-        if cc<=14 then
-            Snd('bass',.8,'A3','E4')Snd('lead','A4','E5')
-        else
-            Snd('bass',.8,'A3','G4')Snd('lead','B4','G5')
+        if cc==13     then Snd('bass', .8, 'A3', 'E4') Snd('lead', 'A4', 'E5')
+        elseif cc==14 then Snd('bass', .8, 'E4', 'A4') Snd('lead','C#5','F#5')
+        elseif cc==15 then Snd('bass', .8, 'G4', 'B4') Snd('lead', 'D5', 'G5')
+        else               Snd('bass', .8, 'G4', 'B4') Snd('lead', 'D5', 'A5')
         end
     else
         SFX.play('clear_6',.6)
-        if cc==17 then Snd('bass',.8,'A3','A4')Snd('lead','E5','G5')
-        elseif cc==18 then Snd('bass',.7,'A4')Snd('lead',.8,'C4','G5')Snd('bell','D5')
-        elseif cc==19 then Snd('bass',.7,'A4')Snd('lead',.8,'A4','E5')Snd('bell','B5')
-        elseif cc==20 then Snd('bass',.7,'A4')Snd('lead',.8,'A4','E4')Snd('bell','D5','B5','G6')
-        else               Snd('bass',.7,'A4')Snd('lead',.8,'A4','E4')Snd('bell','B5','E6','A6')
+        if cc==17     then Snd('bass', .8, 'A4','C#5') Snd('lead', 'E5', 'A5')
+        elseif cc==18 then Snd('bass', .7, 'A4') Snd('lead', .8, 'E5', 'A5') Snd('bell','C#6')
+        elseif cc==19 then Snd('bass', .7, 'A4') Snd('lead', .8, 'E5', 'A5') Snd('bell', 'E6')
+        elseif cc==20 then Snd('bass', .7, 'E5') Snd('lead', .8, 'A5') Snd('bell', 'E6', 'A6')
+        else               Snd('bass', .7, 'E5') Snd('lead', .8, 'A5') Snd('bell', 'A6', 'E7')
         end
     end
 end

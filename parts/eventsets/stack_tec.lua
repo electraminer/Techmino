@@ -39,11 +39,14 @@ local function _endZone(P)
 	P.modeData.Zone=0
 	for i,attack in ipairs(P.modeData.builtAttack) do
 		local T = randomTarget(P)
-		local cancelledAttack = P:cancel(attack)
-		local sendTime = totalSendTime * i / #P.modeData.builtAttack -- Lines come in over time
-		P:attack(T,attack - cancelledAttack, sendTime, generateLine(P.atkRND:random(10)))
+		if T then
+			local cancelledAttack = P:cancel(attack)
+			local sendTime = totalSendTime * i / #P.modeData.builtAttack -- Lines come in over time
+			P:attack(T,attack - cancelledAttack, sendTime, generateLine(P.atkRND:random(10)))
+		end
 	end
 	P.modeData.builtAttack={}
+	P.modeData.ZoneLineTotal = 0
 	
 	if P.cur then
 		P:freshMoveBlock ('push')
@@ -74,9 +77,16 @@ return {
 	task=function(P)
 		P.modeData.LineTotal=0
 		P.modeData.Zone=0
+		P.modeData.ZoneLineTotal=0
 		P.modeData.FrameZoneStarted=0
 		P.modeData.builtAttack={}
 		P.modeData.timePerQuarter = 0
+
+		-- Pieces spawn one lower
+		local oldSpawn = P.getSpawnY
+		function P:getSpawnY(cur)
+			return oldSpawn(P, cur) - 1
+		end
 
 		-- Replace attack function
 		function P:attack(target, send, time, line)
@@ -166,9 +176,14 @@ return {
 	hook_drop=function(P)
 		local c=#P.clearedRow
 		if #P.clearedRow>0 and P.modeData.Zone==0 then
+			local prev = P.modeData.LineTotal
 			P.modeData.LineTotal=P.modeData.LineTotal+#P.clearedRow
-			if P.modeData.LineTotal>LINES_PER_QUARTER*4 then
+			if P.modeData.LineTotal>=LINES_PER_QUARTER*4 then
 				P.modeData.LineTotal=LINES_PER_QUARTER*4
+				if prev < LINES_PER_QUARTER*4 and P.type == 'human' then
+					-- SFX for full zone charge
+					SFX.play('ren_mega')
+				end
 			end
 		end
 		
@@ -179,6 +194,12 @@ return {
 
 			-- Add the cleared lines back underneath the board
 			P:garbageRise(21,c,1023)
+			P.modeData.ZoneLineTotal = P.modeData.ZoneLineTotal + c
+			-- Play the sound effect for the zone up to this point
+			if c >= 1 then
+				playClearSFX(P.modeData.ZoneLineTotal)
+			end
+
 			P.stat.row=P.stat.row-c
 			if P.cur then
 				P:freshMoveBlock('push')
