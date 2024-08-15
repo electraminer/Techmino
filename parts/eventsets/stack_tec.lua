@@ -37,7 +37,9 @@ local function _endZone(P)
 	local totalSendTime = TIME_PER_QUARTER
 	-- Exit zone and send the attack
 	P.modeData.Zone=0
+	P.modeData.prevAtk=0
 	for i,attack in ipairs(P.modeData.builtAttack) do
+		P.modeData.prevAtk = P.modeData.prevAtk + attack
 		local T = randomTarget(P)
 		if T then
 			local cancelledAttack = P:cancel(attack)
@@ -47,6 +49,7 @@ local function _endZone(P)
 	end
 	P.modeData.builtAttack={}
 	P.modeData.ZoneLineTotal = 0
+	P.modeData.FrameZoneEnded = P.stat.frame
 	
 	if P.cur then
 		P:freshMoveBlock ('push')
@@ -135,9 +138,9 @@ return {
 	end,
     mesDisp=function(P)
 		-- Display row
-        setFont(60)
-        GC.mStr(P.stat.row,63,280)
-		setFont(30)
+        -- setFont(60)
+        -- GC.mStr(P.stat.row,63,280)
+		-- setFont(30)
 		-- love.graphics.setColor(0,1,0,1)
 		-- if P.modeData.LineTotal<7 then love.graphics.setColor(1,0,0,1) end
 		-- if P.modeData.LineTotal==28 then love.graphics.setColor(0,1,1,1) end
@@ -165,12 +168,21 @@ return {
 				zoneMeter, COLOR.gray,
 				zoneStrength / 4, color,
 			})
+			
+			if P.modeData.FrameZoneEnded > 0 and #PLY_ALIVE > 1 then
+				local afterZoneTimeElapsed = P.stat.frame - P.modeData.FrameZoneEnded
+				if afterZoneTimeElapsed < 150 then
+					local progress = math.max(afterZoneTimeElapsed - 120, 0) / 30
+					love.graphics.setColor(1,1,1,1 - progress)
+					setFont(30)
+					GC.mStr(P.modeData.prevAtk .. " Attack",300,370)
+				end
+			end
 		end
 
-		love.graphics.setColor(1,1,1,1)
-        mText(TEXTOBJ.line,63,350)
-        PLY.draw.drawMarkLine(P,20,.3,1,1,TIME()%.42<.21 and .95 or .6)
-
+		-- love.graphics.setColor(1,1,1,1)
+        -- mText(TEXTOBJ.line,63,350)
+        -- PLY.draw.drawMarkLine(P,20,.3,1,1,TIME()%.42<.21 and .95 or .6)
     end,
 
 	hook_drop=function(P)
