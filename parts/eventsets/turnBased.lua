@@ -103,12 +103,14 @@ local function savestateCtx(P)
     local whitelist = {{
         'field', 'visTime',
         'cur', 'curX', 'curY', 'ghoY',
-        'nextQueue', 'holdQueue', 'stat',
+        'nextQueue', 'holdQueue',
+        'stat',
         'combo', 'b2b', 'b3b',
         'atkBuffer', 'atkBufferSum', 'netAtk',
+        'fieldBeneath',
         'waiting', 'holdTime',
         'spikeTime', 'spike', 'spikeText',
-        'life',
+        'life', 'result',
     }, false}
     local blacklist = {false, false}
     return saved, whitelist, blacklist
@@ -323,6 +325,11 @@ function initSpeculativeAtk(P)
 end
 
 function commit(P)
+    if P.result == 'checkmate' then
+        P.result = nil
+        P:lose()
+        return
+    end
     P:commitNewNext()
     P:commitGarbageRise()
     -- Clear savestates
@@ -483,8 +490,15 @@ function turnBased(timeControls) return {
         P.modeData.speculativeAtk = {}
 
         if P.life == 0 and P.modeData.death == 0 then
-            P.life = 1
-            P.modeData.death = 1
+            P.result = 'checkmate'
+            P.waiting = 1e99
+            P:lock()
+        end
+    end,
+
+    hook_spawn = function(P)
+        if P.result == 'checkmate' then
+            P.cur = nil
             P.waiting = 1e99
         end
     end,
@@ -666,13 +680,20 @@ function turnBased(timeControls) return {
             animationCycle = MATH.abs(animationCycle - 0.5) * 2
             GC.setColor(1, 1, 1, 0.5 + 0.5*animationCycle)
             local key = 'Function 1'
+            local key2 = 'Function 2'
             for k,v in pairs(KEY_MAP.keyboard) do
                 if v == 9 then
                     key = "Press "..string.upper(k)
-                    break
+                elseif v == 10 then
+                    key2 = "Press "..string.upper(k)
                 end
             end
-            GC.mStr(key.." to pass", 300, 10)
+            if P.result == 'checkmate' then
+                GC.mStr(key.." to concede", 300, 10)
+            else
+                GC.mStr(key.." to pass", 300, 10)
+            end
+            GC.mStr(key2.." to undo", 300, 40)
         elseif piecesRemaining == 1 then
             GC.mStr(piecesRemaining.." placement left", 300, 10)
         else
