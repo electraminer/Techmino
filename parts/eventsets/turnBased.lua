@@ -161,16 +161,18 @@ function removePlayer(P, player)
             index = i
         end
     end
-    if P.modeData.turn > index then
-        P.modeData.turn = P.modeData.turn - 1
-    end
-    table.remove(P.modeData.turnOrder, index)
-    if P.modeData.turn > #P.modeData.turnOrder then
-        P.modeData.turn = 1
-    end
-    
-    if P.modeData.turnOrder[P.modeData.turn] == P.sid then
-        startTurn(P)
+    if index > 0 then
+        if P.modeData.turn > index then
+            P.modeData.turn = P.modeData.turn - 1
+        end
+        table.remove(P.modeData.turnOrder, index)
+        if P.modeData.turn > #P.modeData.turnOrder then
+            P.modeData.turn = 1
+        end
+        
+        if P.modeData.turnOrder[P.modeData.turn] == P.sid then
+            startTurn(P)
+        end
     end
 end
 
@@ -479,6 +481,12 @@ function turnBased(timeControls) return {
     hook_die = function(P)
         -- Clear saved garbage
         P.modeData.speculativeAtk = {}
+
+        if P.life == 0 and P.modeData.death == 0 then
+            P.life = 1
+            P.modeData.death = 1
+            P.waiting = 1e99
+        end
     end,
     
     fkey1 = function(P)
