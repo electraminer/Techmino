@@ -536,7 +536,7 @@ function turnBased(timeControls) return {
             end
             -- Perfect clear (overrides everything)
             if P.lastPiece.pc then
-                P.atk = min(8+P.stat.pc*2, 16)
+                P.atk = math.min(8+P.stat.pc*2, 16)
             end
         end
     end,
@@ -689,7 +689,7 @@ function turnBased(timeControls) return {
         end
 
         -- Display combo table
-        setFont(25)
+        setFont(24)
         GC.mStr("Combo", 62, 260)
         for i,bonus in ipairs(COMBO_TABLE) do
             local string = bonus;
@@ -700,8 +700,9 @@ function turnBased(timeControls) return {
                 string = "> " .. bonus .. " <"
                 GC.setColor(1, animationCycle, animationCycle);
             end
-            GC.mStr(string, 62, 260 + 25 * i)
+            GC.mStr(string, 62, 260 + 24 * i)
         end
+        GC.mStr("PC: "..math.min(8+P.stat.pc*2, 16), 62, 260 + 24 * (#COMBO_TABLE + 1))
 
 		-- Display time remaining
         setFont(30)
