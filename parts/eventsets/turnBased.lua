@@ -536,7 +536,7 @@ function turnBased(timeControls) return {
             end
             -- Perfect clear (overrides everything)
             if P.lastPiece.pc then
-                P.atk = math.min(8+P.stat.pc*2, 16)
+                P.atk = math.min(8+(P.stat.pc-1)*2, 16)
             end
         end
     end,
