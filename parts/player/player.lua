@@ -2037,6 +2037,11 @@ do
                 end
             end
 
+            piece.row,piece.dig=cc,gbcc
+            self.atk = atk
+            self:_triggerEvent('hook_atk_calculation')
+            atk = self.atk
+
             -- Send Lines
             atk=floor(atk*(1+self.strength*.25))-- Badge Buff
             send=atk
@@ -2133,7 +2138,6 @@ do
         cscore=floor(cscore)
         self:popScore(cscore)
 
-        piece.row,piece.dig=cc,gbcc
         piece.score=cscore
         piece.atk,piece.exblock=atk,exblock
         piece.off,piece.send=off,send

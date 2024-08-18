@@ -99,7 +99,7 @@ end
 
 
 local function savestateCtx(P)
-    local saved = {P, P.modeData.speculativeAtk}
+    local saved = {P, P.modeData}
     local whitelist = {{
         'field', 'visTime',
         'cur', 'curX', 'curY', 'ghoY',
@@ -111,7 +111,8 @@ local function savestateCtx(P)
         'waiting', 'holdTime',
         'spikeTime', 'spike', 'spikeText',
         'life', 'result',
-    }, false}
+        'lastPiece',
+    }, {'speculativeAtk', 'combo'}}
     local blacklist = {false, false}
     return saved, whitelist, blacklist
 end
@@ -192,6 +193,8 @@ local function getTarget(P)
     -- TODO make this work in teams mode
     return P.modeData.turnOrder[turn]
 end
+
+local COMBO_TABLE = {0, 1, 1, 2, 3, 4, 3, 2}
 
 function initTargeting(P)
     -- Override attacks to choose a deterministic target and save it
@@ -433,7 +436,6 @@ function turnBased(timeControls) return {
     timeControls = timeControls,
 
     task = function(P)
-
         initMainTimer(P)
         initTurnTimer(P)
         initSpeedSettings(P)
@@ -466,6 +468,10 @@ function turnBased(timeControls) return {
                 if P.waiting > 1e98 then
                     -- Auto pass turn if waiting at the end of your turn
                     tryAutoCommit(P)
+                end
+                if P.result == 'checkmate' and P.cur then
+                    P:lock()
+                    P.cur = nil
                 end
                 tickChessTimer(P)
             end
@@ -500,6 +506,38 @@ function turnBased(timeControls) return {
         if P.result == 'checkmate' then
             P.cur = nil
             P.waiting = 1e99
+        end
+    end,
+
+    hook_atk_calculation = function(P)
+        if P.lastPiece.row > 0 then
+            -- Line clear bonus
+            local ATTACK_TABLE = {0, 1, 2, 4}
+            P.atk = ATTACK_TABLE[P.lastPiece.row]
+            -- Combo
+            if P.combo > 0 then
+                P.atk = P.atk + COMBO_TABLE[math.min(P.combo, #COMBO_TABLE)]
+            end
+            -- Spin (overrides combo)
+            if P.lastPiece.spin and not P.lastPiece.mini then
+                P.atk = 2 * P.lastPiece.row
+            end
+            -- Back to back
+            if P.lastPiece.special then
+                if P.b2b > 800 then
+                    P.atk = P.atk + 2
+                elseif P.b2b >= 50 then
+                    P.atk = P.atk + 1
+                end
+            end
+            -- Half perfect clear
+            if P.lastPiece.hpc then
+                P.atk = P.atk + 4
+            end
+            -- Perfect clear (overrides everything)
+            if P.lastPiece.pc then
+                P.atk = min(8+P.stat.pc*2, 16)
+            end
         end
     end,
     
@@ -648,6 +686,21 @@ function turnBased(timeControls) return {
                 GC.mStr(alert,0,-70)
         
             GC.pop()
+        end
+
+        -- Display combo table
+        setFont(25)
+        GC.mStr("Combo", 62, 260)
+        for i,bonus in ipairs(COMBO_TABLE) do
+            local string = bonus;
+            GC.setColor(COLOR.white);
+            if P.combo == i then
+                local animationCycle = (P.stat.frame % 60) / 60
+                animationCycle = math.abs(animationCycle-0.5)*2
+                string = "> " .. bonus .. " <"
+                GC.setColor(1, animationCycle, animationCycle);
+            end
+            GC.mStr(string, 62, 260 + 25 * i)
         end
 
 		-- Display time remaining

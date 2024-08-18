@@ -65,6 +65,7 @@ return {
     mesDisp={},
     hook_drop={},
     hook_die={},
+    hook_atk_calculation={},
     task={},
     extraEvent={
         {'attack', 4},

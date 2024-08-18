@@ -260,6 +260,7 @@ local hooks = {
     'hook_spawn',
     'hook_hold',
     'hook_die',
+    'hook_atk_calculation',
     'task',
 }
 local function _applyGameEnv(P)-- Finish gameEnv processing
