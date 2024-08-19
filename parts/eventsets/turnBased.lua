@@ -524,9 +524,9 @@ function turnBased(timeControls) return {
             end
             -- Back to back
             if P.lastPiece.special then
-                if P.b2b > 800 then
+                if P.lastPiece.b2b > 800 then
                     P.atk = P.atk + 2
-                elseif P.b2b >= 50 then
+                elseif P.lastPiece.b2b >= 50 then
                     P.atk = P.atk + 1
                 end
             end
