@@ -108,18 +108,16 @@ function scene.leave()
 end
 
 local forbbidenKeys={
-    ["\\"]=true,
-    ["return"]=true,
+
 }
 function scene.keyDown(key,isRep)
-    if isRep then return true end
-    if key=='escape' then
+    if key=='escape' and not isRep then
         if selected then
             selected=false
         else
             SCN.back()
         end
-    elseif key=='backspace' then
+    elseif key=='backspace' and not isRep then
         if selected then
             for k,v in next,KEY_MAP.keyboard do
                 if v==selected then

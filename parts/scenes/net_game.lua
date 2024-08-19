@@ -130,7 +130,7 @@ function scene.keyDown(key,isRep)
         else
             _quit()
         end
-    elseif key=='/' then
+    elseif key=='/' and not KEY_MAP.keyboard['/'] then
         if inputBox.hide then
             _switchChat()
             local mes=STRING.trim(inputBox:getText())
