@@ -721,6 +721,7 @@ function Player:setRS(RSname)
 end
 
 function Player:_triggerEvent(eventName)
+    print("Event "..eventName)
     local L=self.gameEnv[eventName]
     if L[1] then
         for i=1,#L do
@@ -730,6 +731,7 @@ function Player:_triggerEvent(eventName)
     end
 end
 function Player:extraEvent(eventName,...)
+    print("XEvent "..eventName)
     if not (self.gameEnv.extraEvent and self.gameEnv.extraEventHandler) then return end
     local list=self.gameEnv.extraEvent
     local eventID

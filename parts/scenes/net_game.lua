@@ -259,13 +259,18 @@ function scene.update(dt)
                 -- Warning check
                 checkWarning(P1,dt)
 
+                print("Try upload stream spectate="..NET.spectate.." frameRun="..P1.frameRun.." lastUpstreamTime="..lastUpstreamTime)
                 -- Upload stream
                 if not NET.spectate and P1.frameRun-lastUpstreamTime>8 then
+                    print("Upload stream")
                     local stream
                     if not GAME.rep[upstreamProgress] then
                         ins(GAME.rep,P1.frameRun)
                         ins(GAME.rep,0)
                     end
+                    for i=upstreamProgress,#GAME.rep {
+                        print("Upload byte "..i..": "..GAME.rep[i])
+                    }
                     stream,upstreamProgress=DATA.dumpRecording(GAME.rep,upstreamProgress)
                     if #stream%3==1 then
                         stream=stream.."\0\0"

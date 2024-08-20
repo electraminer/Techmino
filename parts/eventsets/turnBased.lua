@@ -420,6 +420,7 @@ function advancePeriod(P)
     -- Once periods begin, lock delay is enabled
     P.gameEnv.lock = 30
     P.lockDelay = 30
+    P.gameEnv.infHold = false
     -- Increase gravity speed
     local progression = (P.modeData.period - 1) / (P.gameEnv.timeControls.periods - 1)
     local blocksPerSecond = 2 * 10 ^ (progression * 2.5)
@@ -483,7 +484,9 @@ function turnBased(timeControls) return {
         -- End turn
         local turnPieces = P.stat.piece - P.modeData.startedTurnAtPiece
         P.cur = nil
-        saveState(P)
+        if P.frameRun > 180 then -- Don't save state during the starting countdown to prevent extra piece placement
+            saveState(P)
+        end
         if turnPieces == 7 then
             P.waiting = 1e99
         end
