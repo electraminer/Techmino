@@ -259,7 +259,7 @@ function scene.update(dt)
                 -- Warning check
                 checkWarning(P1,dt)
 
-                print("Try upload stream spectate="..NET.spectate.." frameRun="..P1.frameRun.." lastUpstreamTime="..lastUpstreamTime)
+                print("Try upload stream frameRun="..P1.frameRun.." lastUpstreamTime="..lastUpstreamTime)
                 -- Upload stream
                 if not NET.spectate and P1.frameRun-lastUpstreamTime>8 then
                     print("Upload stream")
