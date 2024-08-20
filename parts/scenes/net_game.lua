@@ -264,13 +264,13 @@ function scene.update(dt)
                 if not NET.spectate and P1.frameRun-lastUpstreamTime>8 then
                     print("Upload stream")
                     local stream
-                    if not GAME.rep[upstreamProgress] then
+                    if not GAME.rep[upstreamProgress] then 
                         ins(GAME.rep,P1.frameRun)
                         ins(GAME.rep,0)
                     end
-                    for i=upstreamProgress,#GAME.rep {
+                    for i=upstreamProgress,#GAME.rep do
                         print("Upload byte "..i..": "..GAME.rep[i])
-                    }
+                    end
                     stream,upstreamProgress=DATA.dumpRecording(GAME.rep,upstreamProgress)
                     if #stream%3==1 then
                         stream=stream.."\0\0"
