@@ -112,7 +112,7 @@ local function savestateCtx(P)
         'spikeTime', 'spike', 'spikeText',
         'life', 'result',
         'lastPiece',
-    }, {'speculativeAtk', 'combo'}}
+    }, {'speculativeAtk', 'combo', 'checkmate'}}
     local blacklist = {false, false}
     return saved, whitelist, blacklist
 end
@@ -328,9 +328,9 @@ function initSpeculativeAtk(P)
 end
 
 function commit(P)
-    if P.result == 'checkmate' then
+    if P.modeData.checkmate == true then
         P.result = nil
-        P:lose()
+        P:checkmate()
         return
     end
     P:commitNewNext()
@@ -450,6 +450,15 @@ function turnBased(timeControls) return {
         P.modeData.savestates = {}
         saveState(P)
 
+        -- Set up checkmate
+        P.modeData.checkmate = false
+        P.checkmate = P.lose
+        function P:lose(force)
+            if force or P.life > 0 then
+                P:checkmate(force)
+            end
+        end
+
         -- Wait until the countdown finishes
         while P.frameRun < 180 do
             coroutine.yield()
@@ -470,7 +479,7 @@ function turnBased(timeControls) return {
                     -- Auto pass turn if waiting at the end of your turn
                     tryAutoCommit(P)
                 end
-                if P.result == 'checkmate' and P.cur then
+                if P.modeData.checkmate == true and P.cur then
                     P:lock()
                     P.cur = nil
                 end
@@ -498,15 +507,15 @@ function turnBased(timeControls) return {
         -- Clear saved garbage
         P.modeData.speculativeAtk = {}
 
-        if P.life == 0 and P.modeData.death == 0 then
-            P.result = 'checkmate'
+        if P.life == 0 then
+            P.modeData.checkmate = true
             P.waiting = 1e99
             P:lock()
         end
     end,
 
     hook_spawn = function(P)
-        if P.result == 'checkmate' then
+        if P.modeData.checkmate == true then
             P.cur = nil
             P.waiting = 1e99
         end
@@ -745,7 +754,7 @@ function turnBased(timeControls) return {
                     key2 = "Press "..string.upper(k)
                 end
             end
-            if P.result == 'checkmate' then
+            if P.modeData.checkmate == true then
                 GC.mStr(key.." to concede", 300, 10)
             else
                 GC.mStr(key.." to pass", 300, 10)

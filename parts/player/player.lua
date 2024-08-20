@@ -2886,6 +2886,7 @@ function Player:update(dt)
                 if self.type=='remote' then
                     if self.loseTimer then
                         self.loseTimer=self.loseTimer-1
+                        print("Lose Timer "..self.loseTimer)
                         if self.loseTimer==0 then
                             self.loseTimer=false
                             self:lose(true)
