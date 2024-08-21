@@ -276,6 +276,12 @@ end
 --Remove player when leave
 local function _playerLeaveRoom(uid)
     if SCN.cur~='net_game' then return end
+    -- Before a player is removed, send the remove player event
+    for i,P in ipairs(PLAYERS) do
+        if P.uid == uid then
+            P:extraEvent('removePlayer', P.sid)
+        end
+    end
     for i=1,#PLAYERS do if PLAYERS[i].uid==uid then table.remove(PLAYERS,i) break end end
     for i=1,#PLY_ALIVE do if PLY_ALIVE[i].uid==uid then table.remove(PLY_ALIVE,i) break end end
     if uid==USER.uid then

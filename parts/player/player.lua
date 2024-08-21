@@ -2850,6 +2850,7 @@ function Player:_die()
             self.visTime[i][j]=min(self.visTime[i][j],20)
         end
     end
+    -- As the player dies, send the remove player event
     self:extraEvent('removePlayer', self.sid)
     if GAME.net then
         if self.id==1 then
