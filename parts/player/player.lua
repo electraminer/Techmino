@@ -721,7 +721,6 @@ function Player:setRS(RSname)
 end
 
 function Player:_triggerEvent(eventName)
-    print("Event "..eventName)
     local L=self.gameEnv[eventName]
     if L[1] then
         for i=1,#L do
@@ -731,7 +730,6 @@ function Player:_triggerEvent(eventName)
     end
 end
 function Player:extraEvent(eventName,...)
-    print("XEvent "..eventName)
     if not (self.gameEnv.extraEvent and self.gameEnv.extraEventHandler) then return end
     local list=self.gameEnv.extraEvent
     local eventID
@@ -2789,7 +2787,6 @@ local function update_streaming(P)
     local eventTime=P.stream[P.streamProgress]
     while eventTime and P.frameRun>=eventTime or eventTime==0 do
         local event=P.stream[P.streamProgress+1]
-        print("Downloaded event "..event)
         if event==0 then-- Just wait
         elseif event<=32 then-- Press key
             P:pressKey(event)
@@ -2866,7 +2863,6 @@ function Player:_die()
     end
 end
 function Player:update(dt)
-    print("Update player "..self.type)
     self.trigFrame=self.trigFrame+dt*60
     if self.alive then
         local S=self.stat
@@ -2879,14 +2875,11 @@ function Player:update(dt)
             end
         end
         while self.trigFrame>=1 do
-            print("Trig Frame")
             if self.streamProgress then
-                print("Stream Progress")
                 local dataDelta=0 -- How much data wating to be process
                 if self.type=='remote' then
                     if self.loseTimer then
                         self.loseTimer=self.loseTimer-1
-                        print("Lose Timer "..self.loseTimer)
                         if self.loseTimer==0 then
                             self.loseTimer=false
                             self:lose(true)
@@ -2912,7 +2905,6 @@ function Player:update(dt)
                         dataDelta<126 and 10 or
                         20
                     do
-                        print("Update Streaming")
                         if self.streamProgress>#self.stream then break end
                         update_streaming(self)
                         update_alive(self,dt)

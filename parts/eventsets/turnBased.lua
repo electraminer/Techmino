@@ -360,6 +360,7 @@ function initSpeedSettings(P)
     P.gameEnv.garbageSpeed = 1e99
     P.gameEnv.pushSpeed = 1e99
     P.gameEnv.infHold = true
+    P.gameEnv.freshLimit = 1e99
 end
 
 -- Initialize the main chess clock for a player

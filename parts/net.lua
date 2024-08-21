@@ -534,7 +534,6 @@ function NET.wsCallBack.player_updateConf(body)
     end
 end
 function NET.wsCallBack.player_finish(body)
-    print("player_finish")
     if SCN.cur~='net_game' then return end
     for _,P in next,PLY_ALIVE do
         if P.uid==body.data.playerId then
@@ -558,7 +557,6 @@ end
 function NET.wsCallBack.player_setState(body)-- not used
 end
 function NET.wsCallBack.player_stream(body)
-    print("player_stream")
     if SCN.cur~='net_game' then return end
     NET.pumpStream(body.data)
 end
