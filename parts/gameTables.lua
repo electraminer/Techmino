@@ -334,6 +334,7 @@ MODE_UPDATE_MAP={
 }
 EVENTSETS={
     'X',
+    'elements',
     'stack_tec',
     'turnBased', 'turnBased_rapid', 'turnBased_blitz', 'turnBased_bullet', 'turnBased_extended', 'turnBased_long', 'turnBased_untimed',
     'attacker_h','attacker_u',
