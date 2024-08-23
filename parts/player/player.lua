@@ -2819,8 +2819,6 @@ local function update_streaming(P)
 end
 local function update_dead(P,dt)
     local S=P.stat
-    
-    P.frameRun=P.frameRun+1
 
     -- Final average speed
     P.dropSpeed=approach(P.dropSpeed,S.piece/S.frame*3600,dt)
