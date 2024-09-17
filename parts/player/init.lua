@@ -311,7 +311,6 @@ local function _applyGameEnv(P)-- Finish gameEnv processing
                 ENV[k]=v
             end
         end
-        break
     end
 
     P._20G=ENV.drop==0
