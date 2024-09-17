@@ -236,17 +236,7 @@ local function _loadRemoteEnv(P,confStr)-- Load gameEnv
         end
     end
 end
-local function _mergeFuncTable(f,L)
-    if type(f)=='function' then
-        ins(L,f)
-    elseif type(f)=='table' then
-        for i=1,#f do
-            ins(L,f[i])
-        end
-    end
-    return L
-end
-local hooks = {
+local tableNeedMerge={
     'task',
     'mesDisp',
     'hook_left',
@@ -262,13 +252,25 @@ local hooks = {
     'hook_die',
     'hook_atk_calculation',
     'task',
+    'extraEvent',
 }
+for _,k in next,tableNeedMerge do gameEnv0[k]={} end
+local function _mergeFuncTable(f,L)
+    if type(f)=='function' then
+        ins(L,f)
+    elseif type(f)=='table' then
+        for i=1,#f do
+            ins(L,f[i])
+        end
+    end
+    return L
+end
 local function _applyGameEnv(P)-- Finish gameEnv processing
     local ENV=P.gameEnv
 
-    -- Apply events
-    for i=1,#hooks do
-        ENV[hooks[i]]=_mergeFuncTable(ENV[hooks[i]],{})
+    -- Create event tables
+    for i=1,#tableNeedMerge do
+        ENV[tableNeedMerge[i]]=_mergeFuncTable(ENV[tableNeedMerge[i]],{})
     end
 
     -- Apply eventSet
@@ -298,15 +300,18 @@ local function _applyGameEnv(P)-- Finish gameEnv processing
                     elseif type(v)=='table' then
                         ENV[k]=TABLE.copy(v)
                     else
-                        ENV[k]=v
+                        ENV.extraEventHandler[ev]=handler
                     end
                 end
+            elseif TABLE.find(tableNeedMerge,k) then
+                _mergeFuncTable(v,ENV[k])
+            elseif type(v)=='table' then
+                ENV[k]=TABLE.copy(v)
             else
-                MES.new('warn',"No event set called: "..ENV.eventSet)
+                ENV[k]=v
             end
-        else
-            MES.new('warn',"Wrong event set type: "..type(ENV.eventSet))
         end
+        break
     end
 
     P._20G=ENV.drop==0

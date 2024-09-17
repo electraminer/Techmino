@@ -274,13 +274,18 @@ function Player:act_rotRight()
             -- Ensure IRS is spent before the rotation is processed so it doesn't throw things off.
             -- This is so that if you for instance, are holding left IRS and then rotate right, it doesn't process
             -- the left and right rotates in the reverse order.
-            self.keyPressing[3] = false
+
+            self.keyPressing[3]=false
             self:resolveIRS()
-            self.keyPressing[3] = true
+            self.keyPressing[3]=true
         end
         self:spin(1)
         self:_triggerEvent('hook_rotate',1)
-        -- self.keyPressing[3]=false New IRS allows you to keep holding rotate
+
+        -- Disable held inputs if IRS is off
+        if not self.gameEnv.irs then
+            self.keyPressing[3]=false
+        end
     end
 end
 function Player:act_rotLeft()
@@ -291,13 +296,16 @@ function Player:act_rotLeft()
             -- Ensure IRS is spent before the rotation is processed so it doesn't throw things off.
             -- This is so that if you for instance, are holding left IRS and then rotate right, it doesn't process
             -- the left and right rotates in the reverse order.
-            self.keyPressing[4] = false
+            self.keyPressing[4]=false
             self:resolveIRS()
-            self.keyPressing[4] = true
+            self.keyPressing[4]=true
         end
         self:spin(3)
         self:_triggerEvent('hook_rotate',3)
-        -- self.keyPressing[4]=false New IRS allows you to keep holding rotate
+        -- Disable held inputs if IRS is off
+        if not self.gameEnv.irs then
+            self.keyPressing[4]=false
+        end
     end
 end
 function Player:act_rot180()
@@ -308,13 +316,17 @@ function Player:act_rot180()
             -- Ensure IRS is spent before the rotation is processed so it doesn't throw things off.
             -- This is so that if you for instance, are holding left IRS and then rotate right, it doesn't process
             -- the left and right rotates in the reverse order.
-            self.keyPressing[5] = false
+
+            self.keyPressing[5]=false
             self:resolveIRS()
-            self.keyPressing[5] = true
+            self.keyPressing[5]=true
         end
         self:spin(2)
         self:_triggerEvent('hook_rotate',2)
-        -- self.keyPressing[5]=false New IRS allows you to keep holding rotate
+        -- Disable held inputs if IRS is off
+        if not self.gameEnv.irs then
+            self.keyPressing[5]=false
+        end
     end
 end
 function Player:act_hardDrop()
@@ -325,7 +337,8 @@ function Player:act_hardDrop()
             SFX.play('drop_cancel',.3)
         else
             if self.bufferedIRS then
-                -- If the player drops quicker than their DAS cut delay, make sure IRS still resolves.
+
+                -- If the player drops quicker than their IRS cut delay, make sure IRS still resolves.
                 self:resolveIRS()
             end
             if self.curY>self.ghoY then
@@ -372,7 +385,10 @@ function Player:act_hold()
     if not self.control then return end
     if self.cur then
         if self:hold() then
-            -- self.keyPressing[8]=false New IRS allows you to keep holding hold
+            -- Disable held inputs if IHS is off
+            if not self.gameEnv.ihs then
+                self.keyPressing[8]=false
+            end
             self:_triggerEvent('hook_hold')
         end
     end
@@ -1196,40 +1212,67 @@ function Player:resetBlock()-- Reset Block's position and execute I*S
     self.curY=y
     self.minY=y+sc[1]
 
+    local ENV=self.gameEnv
+
+    -- In the game settings, there are user-set control flags for irs,irs,ims
+    -- These control in what way the user can buffer their rotate/hold/move inputs.
+    -- (If enabled, they may hold these inputs from the previous piece instead of just Entry Delay)
+
+    -- And mode-set flags for logicalIRS,logicalIHS,logicalIMS
+    -- These control whether IRS/IHS/IMS are effective in modifying what you can do.
+    -- (For instance, changing your piece's spawn position in 20g, or saving you from a death).
+    -- If logical IRS is disabled, the player may still IRS, but it will just buffer their input,
+    -- not actually allowing them to survive in a way they could not without.
+
     local pressing=self.keyPressing
-    -- IMS
-    if self.gameEnv.ims and (pressing[1] and self.movDir==-1 or pressing[2] and self.movDir==1) and self.moving>=self.gameEnv.das then
-        local x=self.curX+self.movDir
-        if not self:ifoverlap(C.bk,x,y) then
-            self.curX=x
+    -- IMS is enabled only when logicalIMS is enabled, because otherwise, it's just faster DAS.
+    if ENV.logicalIMS and (pressing[1] and self.movDir==-1 or pressing[2] and self.movDir==1) and self.moving>=self.gameEnv.das then
+        -- To avoid a top-out
+        if self:ifoverlap(C.bk,self.curX,self.curY) then
+            -- Always perform the shift, since you're topped out anyway
+            self.curX=self.curX+self.movDir
+        elseif ENV.wait>0 and ENV.ims then
+            -- Otherwise, only check IMS if it's enabled and you're in a mode with entry delay (20g)
+            local x=self.curX+self.movDir
+            if not self:ifoverlap(C.bk,x,y) then
+                self.curX=x
+            end
         end
     end
 
-    -- IRS
-    if self.gameEnv.irs then
-        -- If DAS cut delay is enabled and we aren't currently dying, buffer the input instead.
-        if self.gameEnv.dascut>0 and not self:ifoverlap(C.bk, self.curX, self.curY) then
-            self.bufferedIRS = true
-            self.bufferedDelay = self.gameEnv.dascut
-        else
-            if pressing[5] then
-                self:act_rot180()
-            elseif pressing[3] then
-                if pressing[4] then
-                    self:act_rot180()
-                else
-                    self:act_rotRight()
-                end
-            elseif pressing[4] then
-                self:act_rotLeft()
-            end
+    if not ENV.logicalIRS then
+        -- If logical IRS is disabled, all IRS inputs will be buffered to prevent survival.
+        self.bufferedIRS=true
+        self.bufferedDelay=0
+        if ENV.wait==0 then
+            self.bufferedDelay=ENV.irscut
         end
-        -- pressing[3],pressing[4],pressing[5]=false,false,false New IRS allows you to keep holding rotate
+    elseif ENV.wait==0 and ENV.irscut>0 and not self:ifoverlap(C.bk,self.curX,self.curY) then
+        -- If IRS cut delay is enabled and we aren't currently dying, buffer the input instead.
+        self.bufferedIRS=true
+        self.bufferedDelay=ENV.irscut
+    else
+        -- If we're currently dying or in an entry-delay mode (20g), perform the rotation right away.
+        if pressing[5] then
+            self:act_rot180()
+        elseif pressing[3] then
+            if pressing[4] then
+                self:act_rot180()
+            else
+                self:act_rotRight()
+            end
+        elseif pressing[4] then
+            self:act_rotLeft()
+        end
+    end
+    -- Disable held inputs if IRS is off
+    if not ENV.irs then
+        pressing[3],pressing[4],pressing[5]=false,false,false
     end
 
     -- DAS cut
-    if self.gameEnv.dascut>0 then
-        self.moving=self.moving-(self.moving>0 and 1 or -1)*self.gameEnv.dascut
+    if ENV.dascut>0 then
+        self.moving=self.moving-(self.moving>0 and 1 or -1)*ENV.dascut
     end
 
     -- Spawn SFX
@@ -1549,16 +1592,29 @@ function Player:_popNext(ifhold)-- Pop nextQueue to hand
     local pressing=self.keyPressing
 
     -- IHS
-    if not ifhold and pressing[8] and ENV.ihs and self.holdTime>0 then
-        if self.gameEnv.dascut>0 and not self:willDieWith(self.cur) then
-            self.bufferedIRS = true
-            self.bufferedIHS = true
-            self.bufferedDelay = self.gameEnv.dascut
+    if not ifhold and pressing[8] and self.holdTime>0 then
+        if not ENV.logicalIHS then
+            -- If logical IHS is disabled, all IHS inputs will be buffered to prevent survival.
+            self.bufferedIRS=true
+            self.bufferedIHS=true
+            self.bufferedDelay=0
+            if ENV.wait==0 then
+                self.bufferedDelay=ENV.irscut
+            end
+        elseif ENV.wait==0 and ENV.irscut>0 and not self:willDieWith(self.cur) then
+            -- If IRS cut delay is enabled and we're not currently dying, buffer the input instead.
+            self.bufferedIRS=true
+            self.bufferedIHS=true
+            self.bufferedDelay=ENV.irscut
             self:resetBlock()
         else
+            -- If we're currently dying or in an entry-delay mode (20g), perform the hold immediately.
             self:hold(true)
         end
-        -- pressing[8]=false New IRS allows you to keep holding hold
+        -- Disable held inputs if IHS is off
+        if not ENV.ihs then
+            pressing[8]=false
+        end
     else
         self:resetBlock()
     end
@@ -1872,7 +1928,7 @@ do
             end
         end
 
-        local yomi = ""
+        local yomi=''
 
         piece.spin,piece.mini=dospin,false
         piece.pc,piece.hpc=false,false
@@ -1884,7 +1940,7 @@ do
                 cscore=(spinSCR[C.name] or spinSCR[8])[cc]
                 if self.b2b>800 then
                     self:showText(text.b3b..text.block[C.name]..text.spin..text.clear[cc],0,-30,35,'stretch')
-                    yomi = yomi..text.b3b..text.block[C.name]..text.spin..text.clear[cc]
+                    yomi=yomi..text.b3b..text.block[C.name]..text.spin..text.clear[cc]
                     atk=b2bATK[cc]+cc*.5
                     exblock=exblock+1
                     cscore=cscore*2
@@ -1894,7 +1950,7 @@ do
                     end
                 elseif self.b2b>=50 then
                     self:showText(text.b2b..text.block[C.name]..text.spin..text.clear[cc],0,-30,35,'spin')
-                    yomi = yomi..text.b2b..text.block[C.name]..text.spin..text.clear[cc]
+                    yomi=yomi..text.b2b..text.block[C.name]..text.spin..text.clear[cc]
                     atk=b2bATK[cc]
                     cscore=cscore*1.2
                     Stat.b2b=Stat.b2b+1
@@ -1903,13 +1959,13 @@ do
                     end
                 else
                     self:showText(text.block[C.name]..text.spin..text.clear[cc],0,-30,45,'spin')
-                    yomi = yomi..text.block[C.name]..text.spin..text.clear[cc]
+                    yomi=yomi..text.block[C.name]..text.spin..text.clear[cc]
                     atk=2*cc
                 end
                 sendTime=20+atk*20
                 if mini then
                     self:showText(text.mini,0,-80,35,'appear')
-                    yomi = text.mini..' '..yomi
+                    yomi=text.mini..' '..yomi
                     atk=atk*.25
                     sendTime=sendTime+60
                     cscore=cscore*.5
@@ -1930,7 +1986,7 @@ do
                 cscore=clearSCR[cc]
                 if self.b2b>800 then
                     self:showText(text.b3b..text.clear[cc],0,-30,50,'fly')
-                    yomi = text.b3b..text.clear[cc]..yomi
+                    yomi=text.b3b..text.clear[cc]..yomi
                     atk=4*cc-10
                     sendTime=100
                     exblock=exblock+1
@@ -1941,7 +1997,7 @@ do
                     end
                 elseif self.b2b>=50 then
                     self:showText(text.b2b..text.clear[cc],0,-30,50,'drive')
-                    yomi = text.b2b..text.clear[cc]..yomi
+                    yomi=text.b2b..text.clear[cc]..yomi
                     sendTime=80
                     atk=3*cc-7
                     cscore=cscore*1.3
@@ -1951,7 +2007,7 @@ do
                     end
                 else
                     self:showText(text.clear[cc],0,-30,70,'stretch')
-                    yomi = text.clear[cc]..yomi
+                    yomi=text.clear[cc]..yomi
                     sendTime=60
                     atk=2*cc-4
                 end
@@ -1959,7 +2015,7 @@ do
                 piece.special=true
             else
                 self:showText(text.clear[cc],0,-30,35,'appear',(8-cc)*.3)
-                yomi = text.clear[cc]..yomi
+                yomi=text.clear[cc]..yomi
                 atk=cc-.5
                 sendTime=20+floor(atk*20)
                 cscore=cscore+clearSCR[cc]
@@ -1978,7 +2034,7 @@ do
                     atk=atk+1
                 end
                 self:showText(text.cmb[min(cmb,21)],0,25,15+min(cmb,15)*5,cmb<10 and 'appear' or 'flicker')
-                yomi = yomi..' '..text.cmb[min(cmb,21)]
+                yomi=yomi..' '..text.cmb[min(cmb,21)]
                 cscore=cscore+min(50*cmb,500)*(2*cc-1)
             end
 
@@ -2514,11 +2570,11 @@ end
 function Player:resolveIRS()
     if self.bufferedIHS then
         self:hold(true)
-        self.bufferedIHS = false
+        self.bufferedIHS=false
     end
 
-    self.bufferedIRS = false
-    local pressing = self.keyPressing
+    self.bufferedIRS=false
+    local pressing=self.keyPressing
     if pressing[5] then
         self:act_rot180()
     elseif pressing[3] then
@@ -2596,6 +2652,18 @@ local function update_alive(P,dt)
     if P.bufferedDelay then
         P.bufferedDelay = P.bufferedDelay - 1
         if P.bufferedDelay == 0 then
+            if P.bufferedIRS then
+                P:resolveIRS()
+            end
+        end
+    end
+
+    -- Buffer IRS after IRS cut delay has elapsed.
+    -- The purpose of this is to allow the player to release their rotate key during the IRS cut delay,
+    -- which will allow them to avoid accidentally using IRS.
+    if P.bufferedDelay then
+        P.bufferedDelay=P.bufferedDelay-1
+        if P.bufferedDelay<=0 then
             if P.bufferedIRS then
                 P:resolveIRS()
             end
@@ -2951,7 +3019,7 @@ function Player:revive()
     SFX.play('emit')
 end
 function Player:torikanEnd(requiredTime)
-    if self.stat.time < requiredTime then
+    if self.stat.time<requiredTime then
         return false
     end
     self:_die()
