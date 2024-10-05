@@ -2299,7 +2299,7 @@ do
                     SFX.play('spin_0')
                     VOC.play(spinVoice[C.name],CHN)
                 end
-                cscore=30x
+                cscore=30
             end
 
             if self.b2b>800 then
