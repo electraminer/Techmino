@@ -6,6 +6,7 @@ return {
     groupClear=true,
     fall=60,
     preCascade=true,
+    face={[28]=3},
     
     hook_atk_calculation = function(P)
         -- Rescale attack to be measured in terms of puyos, instead of rows
