@@ -161,7 +161,7 @@ local function _drawRow(texture,h,V,L,showInvis,falling,fallProg)
         if L[i]>0 then
             if V[i]>0 then
                 gc_setColor(1,1,1,V[i]*.05)
-                if falling[h * #L + i] and fallProg then
+                if falling and falling[h * #L + i] and fallProg then
                     gc_draw(texture[L[i]],30*i-30,-30*(h+falling[h * #L + i]*fallProg))
                 else
                     gc_draw(texture[L[i]],30*i-30,-30*h)
