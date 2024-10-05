@@ -89,9 +89,10 @@ return {
 
     bg='none',bgm='race',
     allowMod=true,
-    blockColors={1,4,7,12},
-    groupClearable={[1]=true,[4]=true,[7]=true,[12]=true},
-    adjClearable={[19]=true,[20]=true,[21]=true,[22]=true,[23]=true},
+    
+    blockColors=false,
+    groupClearable={},
+    adjClearable={},
 
     preCascade = false,
 }

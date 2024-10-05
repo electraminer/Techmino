@@ -7,6 +7,9 @@ return {
     fall=60,
     preCascade=true,
     face={[28]=3},
+    blockColors={1,4,7,12},
+    groupClearable={[1]=true,[4]=true,[7]=true,[12]=true},
+    adjClearable={[19]=true,[20]=true,[21]=true,[22]=true,[23]=true},
     
     hook_atk_calculation = function(P)
         -- Rescale attack to be measured in terms of puyos, instead of rows

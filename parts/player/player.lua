@@ -2404,6 +2404,9 @@ do
         -- Chain is over, add chain damage to damage
         piece.score = piece.score + piece.chainScore
         piece.atk = piece.atk + piece.chainScore / 420
+        if piece.chainLength > 1 then
+            self:showText(text.chain[min(piece.chainLength,21)],0,-30,50,'stretch')
+        end
 
         local ENV = self.gameEnv
         -- Bonus atk/def when focused
