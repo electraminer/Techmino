@@ -94,10 +94,12 @@ return {
                     end
                 end
             end
-            self.fallingBlocks = cascadeBlocks
+            if self:_cascade(cascadeBlocks) then
+                self.fallingBlocks = cascadeBlocks
+                
+                self:_updateFalling(self.gameEnv.fall)
 
-            self:_cascade(cascadeBlocks)
-            self:_updateFalling(self.gameEnv.fall)
+            end
         end
     end,
 }
