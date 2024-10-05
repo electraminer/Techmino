@@ -85,11 +85,4 @@ return {
             table.insert(P.visTime, LINE.new(1e99,true,W))
         end
     end,
-
-    -- Temporary backfire for debugging
-    hook_drop=function(P)
-        if P.lastPiece.atk>0 then
-            P:receive(nil,P.lastPiece.atk,0,generateLine(P,P.holeRND:random(10)))
-        end
-    end,
 }
