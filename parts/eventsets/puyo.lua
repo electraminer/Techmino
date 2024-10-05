@@ -4,7 +4,6 @@ return {
     sequence='bag',seqData={28},
     fillClear=false,
     groupClear=true,
-    fall=60,
     cascade=true,
     preCascade=true,
     face={[28]=3},
