@@ -161,7 +161,7 @@ local function _drawRow(texture,h,V,L,showInvis,falling,fallProg)
         if L[i]>0 then
             if V[i]>0 then
                 gc_setColor(1,1,1,V[i]*.05)
-                if falling and falling[h * #L + i] and fallProg then
+                if falling[h * #L + i] and fallProg then
                     gc_draw(texture[L[i]],30*i-30,-30*(h+falling[h * #L + i]*fallProg))
                 else
                     gc_draw(texture[L[i]],30*i-30,-30*h)
@@ -183,7 +183,7 @@ local function _drawField(P,showInvis)
             gc_setShader(shader_lighter)
             gc_translate(0,-4)
             -- <drawRow>
-                for j=start,min(start+21,#F) do _drawRow(texture,j,V[j],F[j],P.fallingBlocks) end
+                for j=start,min(start+21,#F) do _drawRow(texture,j,V[j],F[j],showInvis,P.fallingBlocks) end
             -- </drawRow>
             gc_setShader(shader_fieldSatur)
             gc_translate(0,4)
@@ -208,7 +208,7 @@ local function _drawField(P,showInvis)
                         h=h+1
                         gc_translate(0,-stepY)
                     end
-                    _drawRow(texture,j,V[j],F[j],P.fallingBlocks,(P.falling/(ENV.fall+1)))
+                    _drawRow(texture,j,V[j],F[j],showInvis,P.fallingBlocks,(P.falling/(ENV.fall+1)))
                 end
             -- </drawRow>
             gc_setShader(shader_fieldSatur)
