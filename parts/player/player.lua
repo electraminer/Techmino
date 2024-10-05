@@ -2387,6 +2387,20 @@ do
     function Player:send()
         local piece = self.lastPiece
 
+        local pc = true
+        for _,row in ipairs(self.field) do
+            for _,cell in ipairs(row) do
+                if cell ~= 0 then
+                    pc = false
+                end
+            end
+        end
+        -- If there's a PC but the line clear wasn't counted as a PC, it's instead a chain PC and scores 5 lines
+        if pc and not piece.pc then
+            piece.cpc = true
+            piece.atk = piece.atk + 5
+        end
+
         -- Chain is over, add chain damage to damage
         piece.score = piece.score + piece.chainScore
         piece.atk = piece.atk + piece.chainScore / 420
