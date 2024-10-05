@@ -2299,13 +2299,12 @@ do
                     SFX.play('spin_0')
                     VOC.play(spinVoice[C.name],CHN)
                 end
-                cscore=30
+                cscore=30x
             end
 
             if self.b2b>800 then
                 self.b2b=max(self.b2b-40,800)
             end
-            self:garbageRelease()
         end
 
         self.combo=cmb
@@ -2411,7 +2410,7 @@ do
         -- Send Lines
         piece.atk=floor(piece.atk*(1+self.strength*.25)) -- Badge Buff
         piece.send=piece.atk
-        
+
         -- Spike
         if piece.atk>0 then
             self.spike=self.spikeTime==0 and piece.atk or self.spike+piece.atk
@@ -2485,6 +2484,11 @@ do
         elseif piece.row>0 then
             _=Stat.clear[n] _[piece.row]=_[piece.row]+1-- Clear[1~25][1~5]
             _=Stat.clears   _[piece.row]=_[piece.row]+1-- Clear[1~5]
+        end
+
+        if piece.row == 0 then
+            -- Accept garbage if combo broken
+            self:garbageRelease()
         end
 
         local ENV = self.gameEnv
