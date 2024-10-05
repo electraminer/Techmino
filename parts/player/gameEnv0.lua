@@ -95,4 +95,5 @@ return {
     adjClearable={},
 
     preCascade = false,
+    cascade = false,
 }

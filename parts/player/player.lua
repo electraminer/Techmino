@@ -1962,10 +1962,13 @@ do
         if self.gameEnv.preCascade then
             -- Mark blocks for cascade
             local cascadeBlocks = {}
-            for y,row in ipairs(self.field) do
-                for x,cell in ipairs(row) do
-                    if cell then
-                        cascadeBlocks[x + y * #row] = true
+            if self.gameEnv.cascade then
+                -- Mark blocks for cascade
+                for y,row in ipairs(self.field) do
+                    for x,cell in ipairs(row) do
+                        if cell then
+                            cascadeBlocks[x + y * #row] = true
+                        end
                     end
                 end
             end
@@ -2364,10 +2367,13 @@ do
 
         -- Mark blocks for cascade
         local cascadeBlocks = {}
-        for y,row in ipairs(self.field) do
-            for x,cell in ipairs(row) do
-                if cell then
-                    cascadeBlocks[x + y * #row] = true
+        if self.gameEnv.cascade then
+            -- Mark blocks for cascade
+            for y,row in ipairs(self.field) do
+                for x,cell in ipairs(row) do
+                    if cell then
+                        cascadeBlocks[x + y * #row] = true
+                    end
                 end
             end
         end
@@ -2609,12 +2615,14 @@ do
         -- Remove rows need to be cleared
         self:_removeClearedLines()
 
-        -- Mark blocks for cascade
         local cascadeBlocks = {}
-        for y,row in ipairs(self.field) do
-            for x,cell in ipairs(row) do
-                if cell then
-                    cascadeBlocks[x + y * #row] = true
+        if self.gameEnv.cascade then
+            -- Mark blocks for cascade
+            for y,row in ipairs(self.field) do
+                for x,cell in ipairs(row) do
+                    if cell then
+                        cascadeBlocks[x + y * #row] = true
+                    end
                 end
             end
         end

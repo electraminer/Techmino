@@ -5,6 +5,7 @@ return {
     fillClear=false,
     groupClear=true,
     fall=60,
+    cascade=true,
     preCascade=true,
     face={[28]=3},
     blockColors={1,4,7,12},
