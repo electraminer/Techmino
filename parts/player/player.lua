@@ -2064,13 +2064,11 @@ do
             piece.chainScore = piece.chainScore + 10 * size * power
             
             -- SFX & Vibrate
-            if self.sound then
-                SFX.play(renSFX[min(cmb,11)],.75)
-                if cmb>14 then
-                    SFX.play('ren_mega',(cmb-10)*.1)
-                end
-                if SETTING.vib>0 then VIB(SETTING.vib+cc+1) end
+            SFX.play(renSFX[min(cmb,11)],.75)
+            if cmb>14 then
+                SFX.play('ren_mega',(cmb-10)*.1)
             end
+            if SETTING.vib>0 then VIB(SETTING.vib+cc+1) end
         end
 
         -- Remove rows need to be cleared
@@ -2584,13 +2582,11 @@ do
             piece.chainScore = piece.chainScore + 10 * size * power
             
             -- SFX & Vibrate
-            if self.sound then
-                SFX.play(renSFX[min(cmb,11)],.75)
-                if cmb>14 then
-                    SFX.play('ren_mega',(cmb-10)*.1)
-                end
-                if SETTING.vib>0 then VIB(SETTING.vib+cc+1) end
+            SFX.play(renSFX[min(cmb,11)],.75)
+            if cmb>14 then
+                SFX.play('ren_mega',(cmb-10)*.1)
             end
+            if SETTING.vib>0 then VIB(SETTING.vib+cc+1) end
         end
 
         -- Remove rows need to be cleared
