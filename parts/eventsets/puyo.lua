@@ -84,6 +84,20 @@ return {
             end
             table.insert(P.field, line)
             table.insert(P.visTime, LINE.new(1e99,true,W))
+            
+            -- Mark blocks for cascade so the garbage falls
+            local cascadeBlocks = {}
+            for y,row in ipairs(self.field) do
+                for x,cell in ipairs(row) do
+                    if cell then
+                        cascadeBlocks[x + y * #row] = true
+                    end
+                end
+            end
+            self.fallingBlocks = cascadeBlocks
+
+            self:_cascade(cascadeBlocks)
+            self:_updateFalling(self.gameEnv.fall)
         end
     end,
 }
