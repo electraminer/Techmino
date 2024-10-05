@@ -163,7 +163,7 @@ function Player:createSplashFX(h)
         local L=self.field[h]
         local size=self.size
         local y=self.fieldY+size*(self.swingOffset.y+self.fieldBeneath+self.fieldUp+615)-30*h*size
-        for x=1,10 do
+        for x=1,self.gameEnv.fieldW do
             local c=L[x]
             if c>0 then
                 SYSFX.newCell(
@@ -786,13 +786,13 @@ end
 
 function Player:getHolePos()-- Get a good garbage-line hole position
     if self.garbageBeneath==0 then
-        return generateLine(self.holeRND:random(10))
+        return generateLine(self,self.holeRND:random(self.gameEnv.fieldW))
     else
-        local p=self.holeRND:random(10)
+        local p=self.holeRND:random(self.gameEnv.fieldW)
         if self.field[1][p]<=0 then
-            return generateLine(self.holeRND:random(10))
+            return generateLine(self,self.holeRND:random(self.gameEnv.fieldW))
         end
-        return generateLine(p)
+        return generateLine(self,p)
     end
 end
 function Player:garbageRelease()-- Check garbage buffer and try to release them
@@ -814,9 +814,9 @@ function Player:garbageRise(color,amount,line)-- Release n-lines garbage to fiel
     local _
     local t=self.showTime*2
     for _=1,amount do
-        ins(self.field,1,LINE.new(0,true))
-        ins(self.visTime,1,LINE.new(t))
-        for i=1,10 do
+        ins(self.field,1,LINE.new(0,true,self.gameEnv.fieldW))
+        ins(self.visTime,1,LINE.new(t,false,self.gameEnv.fieldW))
+        for i=1,self.gameEnv.fieldW do
             self.field[1][i]=bit.rshift(line,i-1)%2==1 and color or 0
         end
     end
@@ -853,18 +853,18 @@ function Player:pushLineList(L,mir)-- Push some lines to field
     local l=#L
     local S=self.gameEnv.skin
     for i=1,l do
-        local r=LINE.new(0)
+        local r=LINE.new(0,false,self.gameEnv.fieldW)
         if not mir then
-            for j=1,10 do
+            for j=1,self.gameEnv.fieldW do
                 r[j]=S[L[i][j]] or 0
             end
         else
-            for j=1,10 do
+            for j=1,self.gameEnv.fieldW do
                 r[j]=S[invList[L[i][11-j]]] or 0
             end
         end
         ins(self.field,1,r)
-        ins(self.visTime,1,LINE.new(20))
+        ins(self.visTime,1,LINE.new(20,false,self.gameEnv.fieldW))
     end
     self.fieldBeneath=self.fieldBeneath+30*l
     if self.cur then
@@ -888,7 +888,7 @@ function Player:getCenterY()
     return self.curY-C.RS.centerPos[C.id][C.dir][1]
 end
 function Player:solid(x,y)
-    if x<1 or x>10 or y<1 then
+    if x<1 or x>self.gameEnv.fieldW or y<1 then
         return true
     end
     if y>#self.field then
@@ -899,7 +899,7 @@ function Player:solid(x,y)
 end
 function Player:ifoverlap(bk,x,y)
     local C=#bk[1]
-    if x<1 or x+C>11 or y<1 then
+    if x<1 or x+C>self.gameEnv.fieldW+1 or y<1 then
         return true
     end
     if y>#self.field then
@@ -1071,32 +1071,137 @@ function Player:freshNewBlock()
     self:freshBlockGhost()
     self:freshBlockDelay(true)
 end
+
 function Player:lock()
     local CB=self.cur.bk
     for i=1,#CB do
         local y=self.curY+i-1
         if not self.field[y] then
-            self.field[y]=LINE.new(0)
-            self.visTime[y]=LINE.new(0)
+            self.field[y]=LINE.new(0,false,self.gameEnv.fieldW)
+            self.visTime[y]=LINE.new(0,false,self.gameEnv.fieldW)
         end
         for j=1,#CB[1] do
             if CB[i][j] then
-                self.field[y][self.curX+j-1]=self.cur.color
+                if self.cur.blockColors and self.gameEnv.blockColors then
+                    self.field[y][self.curX+j-1]=self.gameEnv.blockColors[self.cur.blockColors[CB[i][j]]]
+                else
+                    self.field[y][self.curX+j-1]=self.cur.color
+                end
                 self.visTime[y][self.curX+j-1]=self.showTime
             end
         end
     end
 end
 
+function Player:_cascade(cascadeBlocks)
+    boardModified = false
+    for x = 1,self.gameEnv.fieldW do
+        -- Bottom surface to land blocks on
+        local solidSurface = 0
+        local cascaders = {}
+        local visCascaders = {}
+        local fromCascaders = {}
+        for y,row in ipairs(self.field) do
+            if row[x] > 0 then
+                -- Check if block is cascadable
+                if cascadeBlocks[x + y * #row] then
+                    table.insert(cascaders, row[x])
+                    table.insert(visCascaders, self.visTime[y][x])
+                    table.insert(fromCascaders, y)
+                    cascadeBlocks[x + y * #row] = nil
+                else
+                    -- Non-cascadable block. Cascade what we have so far
+                    for i = solidSurface+1, y-1 do
+                        if i - solidSurface < #cascaders then
+                            self.field[i][x] = cascaders[i - solidSurface]
+                            self.visTime[i][x] = visCascaders[i - solidSurface]
+                            local prevHeight = fromCascaders[i - solidSurface]
+                            local fallDistance = prevHeight - i
+                            if fallDistance > 0 then
+                                boardModified = true
+                                cascadeBlocks[x + i * self.gameEnv.fieldW] = fallDistance
+                            end
+                        else
+                            self.field[i][x] = 0
+                        end
+                    end
+                    -- and reset the solid surface
+                    solidSurface = y
+                    cascaders = {}
+                end
+            end
+        end
+        -- Top of stack, cascade what's left. Cascade what we have so far
+        for i = solidSurface+1, #self.field do
+            if i - solidSurface <= #cascaders then
+                self.field[i][x] = cascaders[i - solidSurface]
+                self.visTime[i][x] = visCascaders[i - solidSurface]
+                local prevHeight = fromCascaders[i - solidSurface]
+                local fallDistance = prevHeight - i
+                if fallDistance > 0 then
+                    boardModified = true
+                    cascadeBlocks[x + i * self.gameEnv.fieldW] = fallDistance
+                end
+            else
+                self.field[i][x] = 0
+            end
+        end
+    end
+    return boardModified
+end
+
+function Player:_checkGroupClear(field)
+    local seen = {}
+    local groups = {}
+    local adjGroups = {}
+    for y=1,#field do
+        local row = field[y]
+        for x=1,#row do
+            local color = row[x]
+            
+            if self.gameEnv.groupClearable[color] then
+                local stack = {{x=x,y=y}}
+                local group = {}
+                local adjs = {}
+                -- Depth first search to find the entire group
+                while #stack > 0 do
+                    local explore = table.remove(stack, #stack)
+                    local index = explore.x + explore.y * #row
+                    if not seen[index] then
+                        table.insert(group, explore)
+                        seen[index] = true
+                        for _,dir in ipairs({{x=0,y=1},{x=1,y=0},{x=0,y=-1},{x=-1,y=0}}) do
+                            local adj = {x=explore.x+dir.x, y=explore.y+dir.y}
+                            if field[adj.y] and field[adj.y][adj.x] == color then
+                                table.insert(stack, adj)
+                            end
+                            if field[adj.y] and self.gameEnv.adjClearable[field[adj.y][adj.x]] then
+                                table.insert(adjs, adj)
+                            end
+                        end
+                    end
+                end
+                if #group >= 4 then
+                    table.insert(groups, group)
+                    table.insert(adjGroups, adjs)
+                end
+            end
+        end
+    end
+    return groups, adjGroups;
+end
+
+
 function Player:_checkClear(field,start,height,CB,CX)
     local cc,gbcc=0,0
-    for i=1,height do
-        local h=start+i-2
+    for h=1,#field do
+
+        h=h-1
 
         -- Bomb trigger (optional, must with CB)
         if CB and h>0 and field[h] and self.clearedRow[cc]~=h then
             for x=1,#CB[1] do
-                if CB[i][x] and field[h][CX+x-1]==19 then
+                if CB[h - start+1] and CB[h - start+1][x] and field[h][CX+x-1]==19 then
                     cc=cc+1
                     self.clearingRow[cc]=h-cc+1
                     self.clearedRow[cc]=h
@@ -1108,7 +1213,7 @@ function Player:_checkClear(field,start,height,CB,CX)
         h=h+1
         -- Row filled
         local full=true
-        for x=1,10 do
+        for x=1,self.gameEnv.fieldW do
             if field[h][x]<=0 then
                 full=false
                 break-- goto CONTINUE_notFull
@@ -1157,7 +1262,7 @@ function Player:_updateFalling(val)
     self.falling=val
     if self.falling==0 then
         local L=#self.clearingRow
-        if self.sound and self.gameEnv.fall>0 and #self.field+L>self.clearingRow[L] then
+        if self.sound and self.gameEnv.fall>0 and L>0 and #self.field+L>self.clearingRow[L] then
             SFX.play('fall')
         end
         TABLE.cut(self.clearingRow)
@@ -1281,7 +1386,7 @@ function Player:resetBlock()-- Reset Block's position and execute I*S
     end
 end
 function Player:getSpawnX(cur)
-    return floor(6-#cur.bk[1]*.5)
+    return floor(1+self.gameEnv.fieldW*.5-#cur.bk[1]*.5)
 end
 function Player:getSpawnY(cur)
     return floor(self.gameEnv.fieldH+1-modf(cur.RS.centerPos[cur.id][cur.dir][1]))+ceil(self.fieldBeneath/30)
@@ -1372,7 +1477,7 @@ function Player:hold_norm(ifpre)
     if self.holdIXSFromNext or #self.holdQueue<ENV.holdCount and self.nextQueue[1] then-- Skip
         local C=self.cur
         if C then
-            ins(self.holdQueue,self:_getBlock(C.id,C.name,C.color))
+            ins(self.holdQueue,self:_getBlock(C.id,C.name,C.color,0,C.blockColors))
 
             if self:willDieWith(self.nextQueue[1]) then
                 self.ghoY=self:getSpawnY(self.nextQueue[1])
@@ -1398,7 +1503,7 @@ function Player:hold_norm(ifpre)
 
             self.spinLast=false
 
-            ins(self.holdQueue,self:_getBlock(C.id,C.name,C.color))
+            ins(self.holdQueue,self:_getBlock(C.id,C.name,C.color,0,C.blockColors))
             self.cur=rem(self.holdQueue,1)
 
             self.curX,self.curY=x,y
@@ -1406,7 +1511,7 @@ function Player:hold_norm(ifpre)
             self.spinLast=false
 
             if C then
-                ins(self.holdQueue,self:_getBlock(C.id,C.name,C.color))
+                ins(self.holdQueue,self:_getBlock(C.id,C.name,C.color,0,C.blockColors))
                 if self:willDieWith(self.holdQueue[1]) then
                     self.ghoY=self:getSpawnY(self.holdQueue[1])
                     self.cur=nil
@@ -1451,7 +1556,7 @@ function Player:hold_swap(ifpre)
 
             self.spinLast=false
 
-            local hb=self:_getBlock(C.id,C.name,C.color)
+            local hb=self:_getBlock(C.id,C.name,C.color,0,C.blockColors)
             self.cur,self.nextQueue[hid]=self.nextQueue[hid],hb
             self.cur.bagLine=nil
 
@@ -1460,7 +1565,7 @@ function Player:hold_swap(ifpre)
             self.spinLast=false
 
             if C then
-                local hb=self:_getBlock(C.id,C.name,C.color)
+                local hb=self:_getBlock(C.id,C.name,C.color,0,C.blockColors)
                 ins(self.holdQueue,self.nextQueue[hid])
                 self.nextQueue[hid]=hb
                 if self:willDieWith(self.holdQueue[1]) then
@@ -1533,9 +1638,11 @@ function Player:hold(ifpre,force)
     end
 end
 
-function Player:_getBlock(id,name,color,bagLineCounter)-- Get a block object
+function Player:_getBlock(id,name,color,bagLineCounter,blockColors)-- Get a block object
     local ENV=self.gameEnv
     local dir=ENV.face[id]
+
+
     return {
         id=id,
         dir=dir,
@@ -1543,16 +1650,22 @@ function Player:_getBlock(id,name,color,bagLineCounter)-- Get a block object
         RS=self.RS,
         name=name or id,
         color=ENV.bone and 17 or color or ENV.skin[id],
+        blockColors=blockColors,
         bagLine=bagLineCounter,
     }
 end
-function Player:getNext(id,bagLineCounter)-- Push a block to nextQueue
-    ins(self.nextQueue,self:_getBlock(id,nil,nil,bagLineCounter))
+function Player:getNext(id,bagLineCounter,blockColors)-- Push a block to nextQueue
+    ins(self.nextQueue,self:_getBlock(id,nil,nil,bagLineCounter,blockColors))
     if self.bot then
         self.bot:pushNewNext(id)
     end
 end
 function Player:spawn()-- Spawn a piece
+    if self.chaining then
+        self:chain()
+        return
+    end
+
     local ENV=self.gameEnv
     if self.holdIXSFromNext then
         self:hold(self.holdIXSFromNext[1],true)
@@ -1845,6 +1958,29 @@ do
             TABLE.cut(self.clearedRow)
         end
 
+        -- Pre-cascade - needs work (should possibly incur extra animation delay?)
+        if self.gameEnv.preCascade then
+            -- Mark blocks for cascade
+            local cascadeBlocks = {}
+            for y,row in ipairs(self.field) do
+                for x,cell in ipairs(row) do
+                    if cell then
+                        cascadeBlocks[x + y * #row] = true
+                    end
+                end
+            end
+            if self:_cascade(cascadeBlocks) then
+                -- Currently, just do the cascade instantly.
+                -- Could possibly delay line clears and only perform after the cascade animation.
+            end
+        end
+
+        local groupClear, adjClear = {}, {}
+        -- Check group clear (PUYO)
+        if self.gameEnv.groupClear then
+            groupClear, adjClear = self:_checkGroupClear(self.field)
+        end
+
         -- Check line clear
         if self.gameEnv.fillClear then
             local _cc,_gbcc=self:_checkClear(self.field,CY,#CB,CB,CX)
@@ -1879,6 +2015,63 @@ do
 
         -- Finesse: roof check
         local finesse=CY>ENV.fieldH-2 or self:_roofCheck()
+        piece.chainSize = 0
+        piece.chainPower = 0
+        piece.chainLength = 0
+        piece.chainScore = 0
+        if #groupClear > 0 then
+            local size = 0
+            local power = 0
+            piece.chainLength = piece.chainLength + 1
+            local cmb = piece.chainLength
+            local colors = {}
+
+            if cmb <= 3 then
+                power = power + 8 * (cmb - 1)
+            else
+                power = power + 32 * (cmb - 3)
+            end
+            -- Clear the groups
+            for _,group in ipairs(groupClear) do
+                if #group > 4 then
+                    power = power + #group - 3
+                end
+                for _,mino in ipairs(group) do
+                    colors[self.field[mino.y][mino.x]] = true
+                    self.field[mino.y][mino.x] = 0
+                    size = size + 1
+                end
+            end
+            -- Clear the adj
+            for _,adjs in ipairs(adjClear) do
+                for _,mino in ipairs(adjs) do
+                    self.field[mino.y][mino.x] = 0
+                end
+            end
+
+            local colorBonus = 3/4
+            for _,_ in pairs(colors) do
+                colorBonus = colorBonus * 2
+            end
+            if colorBonus >= 3 then
+                power = power + colorBonus
+            end
+            
+            if power == 0 then
+                power = 1
+            end
+
+            piece.chainScore = piece.chainScore + 10 * size * power
+            
+            -- SFX & Vibrate
+            if self.sound then
+                SFX.play(renSFX[min(cmb,11)],.75)
+                if cmb>14 then
+                    SFX.play('ren_mega',(cmb-10)*.1)
+                end
+                if SETTING.vib>0 then VIB(SETTING.vib+cc+1) end
+            end
+        end
 
         -- Remove rows need to be cleared
         self:_removeClearedLines()
@@ -1886,9 +2079,9 @@ do
         -- Cancel top clearing FX & get clear flag
         clear=self:removeTopClearingFX()
 
+        -- For now, can only do finesse check if field with is 10
         -- Finesse check (control)
-        local finePts
-        if not finesse then
+        if not finesse and self.gameEnv.fieldW == 10 then
             if dospin then-- Allow 2 more step for roof-less spin
                 self.ctrlCount=self.ctrlCount-2
             end
@@ -1901,6 +2094,7 @@ do
         piece.finePts=finePts
 
         Stat.finesseRate=Stat.finesseRate+finePts
+        
         if finePts<5 then
             Stat.extraPiece=Stat.extraPiece+1
             if ENV.fineKill then
@@ -2085,61 +2279,6 @@ do
                 finish='lose'
             end
 
-            -- Bonus atk/def when focused
-            if ENV.layout=='royale' then
-                local i=min(#self.atker,9)
-                if i>1 then
-                    atk=atk+reAtk[i]
-                    exblock=exblock+reDef[i]
-                end
-            end
-
-            piece.row,piece.dig=cc,gbcc
-            self.atk = atk
-            self:_triggerEvent('hook_atk_calculation')
-            atk = self.atk
-
-            -- Send Lines
-            atk=floor(atk*(1+self.strength*.25))-- Badge Buff
-            send=atk
-            if exblock>0 then
-                exblock=floor(exblock*(1+self.strength*.25))-- Badge Buff
-                self:showText("+"..exblock,0,53,20,'fly')
-                off=off+self:cancel(exblock)
-            end
-            if send>=1 then
-                self:showText(send,0,80,35,'zoomout')
-                _=self:cancel(send)
-                send=send-_
-                off=off+_
-                if send>0 then
-                    local T
-                    if ENV.layout=='royale' then
-                        if self.atkMode==4 then
-                            local M=#self.atker
-                            if M>0 then
-                                for i=1,M do
-                                    self:attack(self.atker[i],send,sendTime,generateLine(self.atkRND:random(10)))
-                                end
-                            else
-                                T=randomTarget(self)
-                            end
-                        else
-                            T=self.atking
-                            self:freshTarget()
-                        end
-                    elseif #PLY_ALIVE>1 then
-                        T=randomTarget(self)
-                    end
-                    if T then
-                        self:attack(T,send,sendTime,generateLine(self.atkRND:random(10)))
-                    end
-                end
-                if self.sound and send>3 then
-                    SFX.play('emit',min(send,7)*.1)
-                end
-            end
-
             -- SFX & Vibrate
             if self.sound then
                 playClearSFX(cc)
@@ -2171,13 +2310,6 @@ do
 
         self.combo=cmb
 
-        -- Spike
-        if atk>0 then
-            self.spike=self.spikeTime==0 and atk or self.spike+atk
-            self.spikeTime=min(self.spikeTime+atk*20,100)
-            self.spikeText:set(self.spike)
-        end
-
         -- DropSpeed bonus
         if self._20G then
             cscore=cscore*2
@@ -2196,7 +2328,9 @@ do
         self:popScore(cscore)
 
         piece.score=cscore
+        piece.row,piece.dig=cc,gbcc
         piece.atk,piece.exblock=atk,exblock
+        piece.sendTime = sendTime
         piece.off,piece.send=off,send
 
         -- Check clearing task
@@ -2217,17 +2351,6 @@ do
             end
         end
 
-        -- Fresh ARE
-        self.waiting=ENV.wait
-
-        -- Prevent sudden death if hang>0
-        if ENV.hang>ENV.wait then
-            if self:willDieWith(self.nextQueue[1]) then
-                self.ghoY=self:getSpawnY(self.nextQueue[1])
-                self.waiting=self.waiting+ENV.hang
-            end
-        end
-
         -- Check bot things
         if self.bot then
             self.bot:checkDest(self.b2b,atk,exblock,yomi)
@@ -2235,39 +2358,147 @@ do
             self.bot:updateCombo(self.combo)
         end
 
+        
+        -- Fresh ARE
+        self.waiting=ENV.wait
+        -- Remove controling block
+        self.cur=nil
+
+
+        -- Mark blocks for cascade
+        local cascadeBlocks = {}
+        for y,row in ipairs(self.field) do
+            for x,cell in ipairs(row) do
+                if cell then
+                    cascadeBlocks[x + y * #row] = true
+                end
+            end
+        end
+        self.fallingBlocks = cascadeBlocks
+        self.chaining = self:_cascade(cascadeBlocks)
+        if self.chaining then
+            self:_updateFalling(self.gameEnv.fall)
+        else
+            self:send()
+        end
+
+        if self.waiting==0 and self.falling==0 then
+            self:spawn()
+        end
+    end
+
+    function Player:send()
+        local piece = self.lastPiece
+
+        -- Chain is over, add chain damage to damage
+        piece.score = piece.score + piece.chainScore
+        piece.atk = piece.atk + piece.chainScore / 420
+
+        local ENV = self.gameEnv
+        -- Bonus atk/def when focused
+        if ENV.layout=='royale' then
+            local i=min(#self.atker,9)
+            if i>1 then
+                piece.atk=piece.atk+reAtk[i]
+                piece.exblock=piece.exblock+reDef[i]
+            end
+        end
+
+        self.atk = piece.atk
+        self:_triggerEvent('hook_atk_calculation')
+        piece.atk = self.atk
+
+        -- Send Lines
+        piece.atk=floor(piece.atk*(1+self.strength*.25)) -- Badge Buff
+        piece.send=piece.atk
+        
+        -- Spike
+        if piece.atk>0 then
+            self.spike=self.spikeTime==0 and piece.atk or self.spike+piece.atk
+            self.spikeTime=min(self.spikeTime+piece.atk*20,100)
+            self.spikeText:set(self.spike)
+        end
+
+        if piece.exblock>0 then
+            piece.exblock=floor(piece.exblock*(1+self.strength*.25))-- Badge Buff
+            self:showText("+"..piece.exblock,0,53,20,'fly')
+            piece.off=piece.off+self:cancel(piece.exblock)
+        end
+        if piece.send>=1 then
+            self:showText(piece.send,0,80,35,'zoomout')
+            _=self:cancel(piece.send)
+            piece.send=piece.send-_
+            piece.off=piece.off+_
+            if piece.send>0 then
+                local T
+                if ENV.layout=='royale' then
+                    if self.atkMode==4 then
+                        local M=#self.atker
+                        if M>0 then
+                            for i=1,M do
+                                self:attack(self.atker[i],piece.send,piece.sendTime,generateLine(self,self.atkRND:random(self.gameEnv.fieldW)))
+                            end
+                        else
+                            T=randomTarget(self)
+                        end
+                    else
+                        T=self.atking
+                        self:freshTarget()
+                    end
+                elseif #PLY_ALIVE>1 then
+                    T=randomTarget(self)
+                end
+                if T then
+                    self:attack(T,piece.send,piece.sendTime,generateLine(self,self.atkRND:random(self.gameEnv.fieldW)))
+                end
+            end
+            if self.sound and piece.send>3 then
+                SFX.play('emit',min(piece.send,7)*.1)
+            end
+        end
+        -- Update stat
+        local Stat = self.stat
+        Stat.piece=Stat.piece+1
+        Stat.row=Stat.row+piece.row
+        Stat.maxFinesseCombo=max(Stat.maxFinesseCombo,self.finesseCombo)
+        Stat.maxCombo=max(Stat.maxCombo,self.combo)
+        Stat.score=Stat.score+piece.score
+        if piece.atk>0 then
+            Stat.atk=Stat.atk+piece.atk
+            if piece.send>0 then
+                Stat.send=Stat.send+floor(piece.send)
+            end
+            if piece.off>0 then
+                Stat.off=Stat.off+piece.off
+            end
+        end
+        if piece.dig>0 then
+            Stat.dig=Stat.dig+piece.dig
+            if piece.atk>0 then
+                Stat.digatk=Stat.digatk+piece.atk*piece.dig/piece.row
+            end
+        end
+        local n=piece.name
+        if piece.spin then
+            _=Stat.spin[n]  _[piece.row+1]=_[piece.row+1]+1-- Spin[1~25][0~4]
+            _=Stat.spins    _[piece.row+1]=_[piece.row+1]+1-- Spin[0~4]
+        elseif piece.row>0 then
+            _=Stat.clear[n] _[piece.row]=_[piece.row]+1-- Clear[1~25][1~5]
+            _=Stat.clears   _[piece.row]=_[piece.row]+1-- Clear[1~5]
+        end
+
+        local ENV = self.gameEnv
+        -- Prevent sudden death if hang>0
+        if ENV.hang>self.waiting then
+            if self:willDieWith(self.nextQueue[1]) then
+                self.ghoY=self:getSpawnY(self.nextQueue[1])
+                self.waiting=self.waiting+ENV.hang
+            end
+        end
+
         -- Check height limit
         if cc==0 and (#self.field>ENV.heightLimit or ENV.lockout and CY>ENV.fieldH) then
             finish='lose'
-        end
-
-        -- Update stat
-        Stat.piece=Stat.piece+1
-        Stat.row=Stat.row+cc
-        Stat.maxFinesseCombo=max(Stat.maxFinesseCombo,self.finesseCombo)
-        Stat.maxCombo=max(Stat.maxCombo,self.combo)
-        Stat.score=Stat.score+cscore
-        if atk>0 then
-            Stat.atk=Stat.atk+atk
-            if send>0 then
-                Stat.send=Stat.send+floor(send)
-            end
-            if off>0 then
-                Stat.off=Stat.off+off
-            end
-        end
-        if gbcc>0 then
-            Stat.dig=Stat.dig+gbcc
-            if atk>0 then
-                Stat.digatk=Stat.digatk+atk*gbcc/cc
-            end
-        end
-        local n=C.name
-        if dospin then
-            _=Stat.spin[n]  _[cc+1]=_[cc+1]+1-- Spin[1~25][0~4]
-            _=Stat.spins    _[cc+1]=_[cc+1]+1-- Spin[0~4]
-        elseif cc>0 then
-            _=Stat.clear[n] _[cc]=_[cc]+1-- Clear[1~25][1~5]
-            _=Stat.clears   _[cc]=_[cc]+1-- Clear[1~5]
         end
 
         if finish then
@@ -2282,10 +2513,103 @@ do
         else
             self:_triggerEvent('hook_drop')
         end
+    end
 
-        -- Remove controling block
-        self.cur=nil
+    function Player:chain()
+        local piece = self.lastPiece
 
+        -- Clear list of cleared-rows
+        if self.clearedRow[1] then
+            TABLE.cut(self.clearedRow)
+        end
+
+        local groupClear, adjClear = {}, {}
+        -- Check group clear (PUYO)
+        if self.gameEnv.groupClear then
+            groupClear, adjClear = self:_checkGroupClear(self.field)
+        end
+
+        local lineClear = {}
+        -- Check line clear
+        if self.gameEnv.fillClear then
+            lineClear = self:_checkClear(self.field,1,#self.field,{{}},1)
+        end
+
+        if #groupClear > 0 then
+            local size = 0
+            local power = 0
+            piece.chainLength = piece.chainLength + 1
+            local cmb = piece.chainLength
+            local colors = {}
+
+            if cmb <= 3 then
+                power = power + 8 * (cmb - 1)
+            else
+                power = power + 32 * (cmb - 3)
+            end
+            -- Clear the groups
+            for _,group in ipairs(groupClear) do
+                if #group > 4 then
+                    power = power + #group - 3
+                end
+                for _,mino in ipairs(group) do
+                    colors[self.field[mino.y][mino.x]] = true
+                    self.field[mino.y][mino.x] = 0
+                    size = size + 1
+                end
+            end
+            -- Clear the adj
+            for _,adjs in ipairs(adjClear) do
+                for _,mino in ipairs(adjs) do
+                    self.field[mino.y][mino.x] = 0
+                end
+            end
+
+            local colorBonus = 3/4
+            for _,_ in pairs(colors) do
+                colorBonus = colorBonus * 2
+            end
+            if colorBonus >= 3 then
+                power = power + colorBonus
+            end
+
+            if power == 0 then
+                power = 1
+            end
+
+            piece.chainScore = piece.chainScore + 10 * size * power
+            
+            -- SFX & Vibrate
+            if self.sound then
+                SFX.play(renSFX[min(cmb,11)],.75)
+                if cmb>14 then
+                    SFX.play('ren_mega',(cmb-10)*.1)
+                end
+                if SETTING.vib>0 then VIB(SETTING.vib+cc+1) end
+            end
+        end
+
+        -- Remove rows need to be cleared
+        self:_removeClearedLines()
+
+        -- Mark blocks for cascade
+        local cascadeBlocks = {}
+        for y,row in ipairs(self.field) do
+            for x,cell in ipairs(row) do
+                if cell then
+                    cascadeBlocks[x + y * #row] = true
+                end
+            end
+        end
+        self.fallingBlocks = cascadeBlocks
+        self.chaining = self:_cascade(cascadeBlocks)
+        if self.chaining then
+            self:_updateFalling(self.gameEnv.fall)
+        else
+            self:send()
+        end
+
+        self.waiting=self.gameEnv.wait
         if self.waiting==0 and self.falling==0 then
             self:spawn()
         end
@@ -2358,7 +2682,7 @@ local function task_finish(self)
         self.endCounter=self.endCounter+1
         if self.endCounter<40 then
             -- Make field visible
-            for j=1,#self.field do for i=1,10 do
+            for j=1,#self.field do for i=1,self.gameEnv.fieldW do
                 if self.visTime[j][i]<20 then
                     self.visTime[j][i]=self.visTime[j][i]+.5
                 end
@@ -2374,7 +2698,7 @@ local function task_fade(self)
         self.endCounter=self.endCounter+1
         if self.endCounter<40 then
             -- Make field invisible
-            for j=1,#self.field do for i=1,10 do
+            for j=1,#self.field do for i=1,self.gameEnv.fieldW do
                 self.visTime[j][i]=math.max(3,self.visTime[j][i]-.5)
             end end
         elseif self.endCounter==60 then return end
@@ -2386,14 +2710,14 @@ local function task_lose(self)
         self.endCounter=self.endCounter+1
         if self.endCounter<40 then
             -- Make field visible
-            for j=1,#self.field do for i=1,10 do
+            for j=1,#self.field do for i=1,self.gameEnv.fieldW do
                 if self.visTime[j][i]<20 then
                     self.visTime[j][i]=self.visTime[j][i]+.5
                 end
             end end
         elseif self.endCounter>80 then
             for i=1,#self.field do
-                for j=1,10 do
+                for j=1,self.gameEnv.fieldW do
                     if self.visTime[i][j]>0 then
                         self.visTime[i][j]=self.visTime[i][j]-1
                     end
@@ -2638,7 +2962,7 @@ local function update_alive(P,dt)
         local V=P.visTime
         for j=1,#P.field do
             local L=V[j]
-            for i=1,10 do
+            for i=1,self.gameEnv.fieldW do
                 if L[i]>0 then
                     L[i]=L[i]-1
                 end
@@ -2912,7 +3236,7 @@ function Player:_die()
     self.tasks={}
     self:clearAttackBuffer()
     for i=1,#self.visTime do    
-        for j=1,10 do
+        for j=1,self.gameEnv.fieldW do
             self.visTime[i][j]=min(self.visTime[i][j],20)
         end
     end

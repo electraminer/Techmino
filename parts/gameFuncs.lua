@@ -423,11 +423,11 @@ end
 function getItem(itemName,amount)
     STAT.item[itemName]=STAT.item[itemName]+(amount or 1)
 end
-function generateLine(hole)
-    return 1023-2^(hole-1)
+function generateLine(P,hole)
+    return 2^P.gameEnv.fieldW - 1 -2^(hole-1)
 end
-function notEmptyLine(L)
-    for i=1,10 do
+function notEmptyLine(P,L)
+    for i=1,P.gameEnv.fieldW do
         if L[i]>0 then
             return true
         end
@@ -436,18 +436,18 @@ end
 function setField(P,F)
     local height=0
     for y=#F,1,-1 do
-        if notEmptyLine(F[y]) then
+        if notEmptyLine(P,F[y]) then
             height=y
             break
         end
     end
     local t=P.showTime*3
     for y=1,height do
-        local notEmpty=notEmptyLine(F[y])
-        P.field[y]=LINE.new(0,notEmpty)
-        P.visTime[y]=LINE.new(t)
+        local notEmpty=notEmptyLine(P,F[y])
+        P.field[y]=LINE.new(0,notEmpty,P.gameEnv.fieldW)
+        P.visTime[y]=LINE.new(t,0,P.gameEnv.fieldW)
         if notEmpty then
-            for x=1,10 do
+            for x=1,P.gameEnv.fieldW do
                 P.field[y][x]=F[y][x]
             end
             P.garbageBeneath=P.garbageBeneath+1
@@ -1114,7 +1114,8 @@ do-- function checkWarning(P,dt)
             if P.frameRun%26==0 then
                 local F=P.field
                 local height=0-- Max height of row 4~7
-                for x=4,7 do
+                local mid = math.ceil(P.gameEnv.fieldW/2) + 1
+                for x=math.max(mid-2,1),math.min(mid+1,P.gameEnv.fieldW) do
                     for y=#F,1,-1 do
                         if F[y][x]>0 then
                             if y>height then

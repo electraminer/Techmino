@@ -380,7 +380,19 @@ local function _applyGameEnv(P)-- Finish gameEnv processing
                     initSZOcount=5
                 end
             end
-            P:getNext(piece,bagLineCounter)
+            local blockColors = nil
+            if ENV.blockColors then
+                -- Generate block colors
+                blockColors = {
+                    P.seqRND:random(#ENV.blockColors),
+                    P.seqRND:random(#ENV.blockColors),
+                    P.seqRND:random(#ENV.blockColors),
+                    P.seqRND:random(#ENV.blockColors),
+                    P.seqRND:random(#ENV.blockColors),
+                }
+            end
+
+            P:getNext(piece,bagLineCounter,blockColors)
             bagLineCounter=0
         else
             if ENV.bagLine then

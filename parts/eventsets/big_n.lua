@@ -6,17 +6,18 @@ return
     wait=8,
     fall=20,
     fieldH=10,
+    fieldW=5,
     mesDisp=function(P)
         PLY.draw.drawProgress(P.stat.row,P.modeData.target)
         PLY.draw.drawTargetLine(P,200-P.stat.row)
     end,
     task=function(P)
-        local F=P.field
-        for i=1,24 do
-            F[i]=LINE.new(20)
-            P.visTime[i]=LINE.new(20)
-            for x=3,7 do F[i][x]=0 end
-        end
+        -- local F=P.field
+        -- for i=1,24 do
+        --     F[i]=LINE.new(20,false,P.gameEnv.fieldW)
+        --     P.visTime[i]=LINE.new(20,false,P.gameEnv.fieldW)
+        --     for x=3,7 do F[i][x]=0 end
+        -- end
         P.modeData.target=10
     end,
     hook_drop=function(P)

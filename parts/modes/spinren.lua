@@ -55,12 +55,12 @@ return {
             P.modeData.colorSet[i]=P.holeRND:random(25)
         end
         P.randomizer_spinren=randomizer(P.holeRND)
-        -- table.insert(P.field,1,LINE.new(0))
+        -- table.insert(P.field,1,LINE.new(0,false,P.gameEnv.fieldW))
         -- P.field[1][1]=18
         -- P.field[1][2]=18
         -- P.field[1][9]=18
         -- P.field[1][10]=18
-        -- table.insert(P.visTime,1,LINE.new(20))
+        -- table.insert(P.visTime,1,LINE.new(20,false,P.gameEnv.fieldW))
         P:pushLineList(get_lines(18,P))
         P.fieldBeneath=0
     end,

@@ -3,8 +3,8 @@ return {
         if P.lastPiece.row>0 then
             for _=1,#P.clearedRow do
                 local h=#P.field
-                P.field[h+1]=LINE.new(20)
-                P.visTime[h+1]=LINE.new(20)
+                P.field[h+1]=LINE.new(20,false,P.gameEnv.fieldW)
+                P.visTime[h+1]=LINE.new(20,false,P.gameEnv.fieldW)
                 for i=3,7 do P.field[h+1][i]=0 end
             end
             if P.combo>P.modeData.maxCombo then

@@ -3,7 +3,7 @@ return {
         noTele=true,
         mindas=7,minarr=1,minsdarr=1,
         sequence="bagES",
-        hook_drop=require'parts.eventsets.bigWallGen'.hook_drop,
+        -- hook_drop=require'parts.eventsets.bigWallGen'.hook_drop,
         eventSet='big_n',
         bg='bg2',bgm='push',
     },

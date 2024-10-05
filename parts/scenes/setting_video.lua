@@ -24,7 +24,7 @@ function scene.draw()
     gc.translate(720,149-WIDGET.scrollPos)
     gc.scale(2)
     gc.setColor(1,1,1)
-    PLY.draw.drawGhost[SETTING.ghostType](fakeBlock,0,0,SETTING.ghost,skinLib,math.floor(TIME()*3)%16+1)
+    PLY.draw.drawGhost[SETTING.ghostType](fakeBlock,0,0,SETTING.ghost,skinLib,math.floor(TIME()*3)%16+1,{})
     gc.pop()
 
     gc.push('transform')

@@ -155,13 +155,17 @@ local function _cancelField()
     gc_pop()
 end
 
-local function _drawRow(texture,h,V,L,showInvis)
+local function _drawRow(texture,h,V,L,showInvis,falling,fallProg)
     local t=TIME()*4
-    for i=1,10 do
+    for i=1,#L do
         if L[i]>0 then
             if V[i]>0 then
                 gc_setColor(1,1,1,V[i]*.05)
-                gc_draw(texture[L[i]],30*i-30,-30*h)
+                if falling[h * #L + i] and fallProg then
+                    gc_draw(texture[L[i]],30*i-30,-30*(h+falling[h * #L + i]*fallProg))
+                else
+                    gc_draw(texture[L[i]],30*i-30,-30*h)
+                end
             elseif showInvis then
                 gc_setColor(1,1,1,.3+.08*sin(.5*(h-i)+t))
                 gc_rectangle('fill',30*i-30,-30*h,30,30)
@@ -179,7 +183,7 @@ local function _drawField(P,showInvis)
             gc_setShader(shader_lighter)
             gc_translate(0,-4)
             -- <drawRow>
-                for j=start,min(start+21,#F) do _drawRow(texture,j,V[j],F[j]) end
+                for j=start,min(start+21,#F) do _drawRow(texture,j,V[j],F[j],P.fallingBlocks) end
             -- </drawRow>
             gc_setShader(shader_fieldSatur)
             gc_translate(0,4)
@@ -188,7 +192,7 @@ local function _drawField(P,showInvis)
         end
 
         -- <drawRow>
-            for j=start,min(start+21,#F) do _drawRow(texture,j,V[j],F[j],showInvis) end
+            for j=start,min(start+21,#F) do _drawRow(texture,j,V[j],F[j],showInvis,P.fallingBlocks) end
         -- </drawRow>
     else-- With falling animation
         local stepY=ENV.smooth and (P.falling/(ENV.fall+1))^1.6*30 or 30
@@ -204,7 +208,7 @@ local function _drawField(P,showInvis)
                         h=h+1
                         gc_translate(0,-stepY)
                     end
-                    _drawRow(texture,j,V[j],F[j])
+                    _drawRow(texture,j,V[j],F[j],P.fallingBlocks,(P.falling/(ENV.fall+1)))
                 end
             -- </drawRow>
             gc_setShader(shader_fieldSatur)
@@ -223,7 +227,7 @@ local function _drawField(P,showInvis)
                     gc_setColor(1,1,1,alpha)
                     gc_rectangle('fill',0,30-30*j,300,stepY)
                 end
-                _drawRow(texture,j,V[j],F[j],showInvis)
+                _drawRow(texture,j,V[j],F[j],showInvis,P.fallingBlocks,(P.falling/(ENV.fall+1)))
             end
         -- </drawRow>
         gc_pop()
@@ -270,15 +274,18 @@ local function _drawFXs(P)
     end
 end
 local drawGhost={
-    color=function(CB,curX,ghoY,alpha,texture,clr)
+    color=function(CB,curX,ghoY,alpha,texture,clr,cur,env)
         gc_setColor(1,1,1,alpha)
         for i=1,#CB do for j=1,#CB[1] do
             if CB[i][j] then
+                if cur.blockColors and env.blockColors then
+                    clr = env.blockColors[cur.blockColors[CB[i][j]]]
+                end
                 gc_draw(texture[clr],30*(j+curX-1)-30,-30*(i+ghoY-1))
             end
         end end
     end,
-    gray=function(CB,curX,ghoY,alpha,texture,_)
+    gray=function(CB,curX,ghoY,alpha,texture,_,_,_)
         gc_setColor(1,1,1,alpha)
         for i=1,#CB do for j=1,#CB[1] do
             if CB[i][j] then
@@ -286,16 +293,21 @@ local drawGhost={
             end
         end end
     end,
-    colorCell=function(CB,curX,ghoY,alpha,_,clr)
+    colorCell=function(CB,curX,ghoY,alpha,_,clr,cur,env)
         clr=BLOCK_COLORS[clr]
         gc_setColor(clr[1],clr[2],clr[3],alpha)
         for i=1,#CB do for j=1,#CB[1] do
             if CB[i][j] then
+                if cur.blockColors and env.blockColors then
+                    clr = env.blockColors[cur.blockColors[CB[i][j]]]
+                    clr=BLOCK_COLORS[clr]
+                    gc_setColor(clr[1],clr[2],clr[3],alpha)
+                end
                 gc_rectangle('fill',30*(j+curX-1)-30,-30*(i+ghoY-1),30,30)
             end
         end end
     end,
-    grayCell=function(CB,curX,ghoY,alpha,_,_)
+    grayCell=function(CB,curX,ghoY,alpha,_,_,_,_)
         gc_setColor(1,1,1,alpha)
         for i=1,#CB do for j=1,#CB[1] do
             if CB[i][j] then
@@ -303,17 +315,22 @@ local drawGhost={
             end
         end end
     end,
-    colorLine=function(CB,curX,ghoY,alpha,_,clr)
+    colorLine=function(CB,curX,ghoY,alpha,_,clr,cur,env)
         clr=BLOCK_COLORS[clr]
         gc_setColor(clr[1],clr[2],clr[3],alpha)
         gc_setLineWidth(4)
         for i=1,#CB do for j=1,#CB[1] do
             if CB[i][j] then
+                if cur.blockColors and env.blockColors then
+                    clr = env.blockColors[cur.blockColors[CB[i][j]]]
+                    clr=BLOCK_COLORS[clr]
+                    gc_setColor(clr[1],clr[2],clr[3],alpha)
+                end
                 gc_rectangle('line',30*(j+curX-1)-30+4,-30*(i+ghoY-1)+4,22,22)
             end
         end end
     end,
-    grayLine=function(CB,curX,ghoY,alpha,_,_)
+    grayLine=function(CB,curX,ghoY,alpha,_,_,_,_)
         gc_setColor(1,1,1,alpha)
         gc_setLineWidth(4)
         for i=1,#CB do for j=1,#CB[1] do
@@ -323,11 +340,15 @@ local drawGhost={
         end end
     end,
 }
-local function _drawBlockOutline(CB,curX,curY,texture,trans)
+local function _drawBlockOutline(CB,curX,curY,texture,trans,skinLib,cur,env)
+
     shader_alpha:send('a',trans)
     gc_setShader(shader_alpha)
     for i=1,#CB do for j=1,#CB[1] do
         if CB[i][j] then
+            if cur.blockColors and env.blockColors then
+                texture = skinLib[env.blockColors[cur.blockColors[CB[i][j]]]]
+            end
             local x=30*(j+curX)-60-3
             local y=30-30*(i+curY)-3
             gc_draw(texture,x,y)
@@ -346,11 +367,15 @@ local function _drawBlockShade(CB,curX,curY,alpha)
         end
     end end
 end
-local function _drawBlock(CB,curX,curY,texture)
+local function _drawBlock(CB,curX,curY,texture,skinLib,cur,env)
     gc_setColor(1,1,1)
     gc_setShader(shader_blockSatur)
+    
     for i=1,#CB do for j=1,#CB[1] do
         if CB[i][j] then
+            if cur.blockColors and env.blockColors then
+                texture = skinLib[env.blockColors[cur.blockColors[CB[i][j]]]]
+            end
             gc_draw(texture,30*(j+curX-1)-30,-30*(i+curY-1))
         end
     end end
@@ -461,7 +486,7 @@ local function _drawLDI(easyFresh,length,freshTime)-- Lock Delay Indicator
         gc_draw(LDmarks)
     end
 end
-local function _drawHold(holdQueue,holdCount,holdTime,skinLib)
+local function _drawHold(holdQueue,holdCount,holdTime,skinLib,env)
     local N=holdCount*72
     gc_push('transform')
         gc_translate(12,20)
@@ -482,6 +507,10 @@ local function _drawHold(holdQueue,holdCount,holdTime,skinLib)
                 gc_scale(k)
                 for i=1,#bk do for j=1,#bk[1] do
                     if bk[i][j] then
+                        
+                        if holdQueue[n].blockColors and env.blockColors then
+                            texture = skinLib[env.blockColors[holdQueue[n].blockColors[bk[i][j]]]]
+                        end
                         gc_draw(texture,30*(j-#bk[1]*.5)-30,-30*(i-#bk*.5))
                     end
                 end end
@@ -539,6 +568,10 @@ local function _drawNext(P,repMode)
                 gc_scale(k)
                 for i=1,#bk do for j=1,#bk[1] do
                     if bk[i][j] then
+                        
+                        if queue[N].blockColors and P.gameEnv.blockColors then
+                            sprite = P.skinLib[P.gameEnv.blockColors[queue[N].blockColors[bk[i][j]]]]
+                        end
                         gc_draw(sprite,30*(j-#bk[1]*.5)-30,-30*(i-#bk*.5))
                     end
                 end end
@@ -752,11 +785,14 @@ function draw.drawTargetLine(P,h,overrideColor)
             gc_setColor(1,h>10 and 0 or .2+.8*rnd(),.5)
         end
         _applyField(P)
+        
+        gc_translate(0,630*(1-10/P.gameEnv.fieldW))
+        gc_scale(10/P.gameEnv.fieldW)
         h=600-30*h
         if P.falling~=-1 then
             h=h-#P.clearingRow*(P.gameEnv.smooth and (P.falling/(P.gameEnv.fall+1))^1.6*30 or 30)
         end
-        gc_line(0,h,300,h)
+        gc_line(0,h,30*P.gameEnv.fieldW,h)
         _cancelField()
     end
 end
@@ -765,8 +801,11 @@ function draw.drawMarkLine(P,h,r,g,b,a)
         gc_setLineWidth(4)
         gc_setColor(r,g,b,a)
         _applyField(P)
+        
+        gc_translate(0,630*(1-10/P.gameEnv.fieldW))
+        gc_scale(10/P.gameEnv.fieldW)
         h=600-30*h
-        gc_line(0,h,300,h)
+        gc_line(0,h,30*P.gameEnv.fieldW,h)
         _cancelField()
     end
 end
@@ -793,21 +832,27 @@ function draw.norm(P,repMode)
 
         -- Draw HUD
         if ENV.nextCount>0 then _drawNext(P,repMode) end
-        if ENV.holdMode=='hold' and ENV.holdCount>0 then _drawHold(P.holdQueue,ENV.holdCount,P.holdTime,P.skinLib) end
+        if ENV.holdMode=='hold' and ENV.holdCount>0 then _drawHold(P.holdQueue,ENV.holdCount,P.holdTime,P.skinLib,P.gameEnv) end
         if P.curMission then _drawMission(P.curMission,ENV.mission,ENV.missionKill) end
         _drawDial(499,505,P.dropSpeed)
         if P.life>0 then _drawLife(P.life) end
 
         -- Field-related things
         _applyField(P)
+            gc_scale(10/P.gameEnv.fieldW)
+            gc_translate(0,600*(P.gameEnv.fieldW/10-1))
             -- Fill field
             gc_setColor(0,0,0,.6)
-            gc_rectangle('fill',0,-10-camDY,300,610)
+            gc_rectangle('fill',0,-10-camDY,30*P.gameEnv.fieldW,610)
 
             -- Draw grid
             if ENV.grid then
-                gc_setColor(1,1,1,ENV.grid)
-                gc_draw(gridLines,0,-40-(camDY-camDY%30))
+                local i = 0
+                while i < P.gameEnv.fieldW do
+                    gc_setColor(1,1,1,ENV.grid)
+                    gc_draw(gridLines,30*i,-40-(camDY-camDY%30))
+                    i = i + 9
+                end
             end
 
             gc_translate(0,600)
@@ -817,7 +862,7 @@ function draw.norm(P,repMode)
             -- Draw dangerous area
             if fieldTop-camDY<610 then
                 gc_setColor(1,0,0,.26)
-                gc_rectangle('fill',0,fieldTop,300,-10-camDY-(600-fieldTop))
+                gc_rectangle('fill',0,fieldTop,30*P.gameEnv.fieldW,-10-camDY-(600-fieldTop))
             end
 
             -- Draw field
@@ -842,11 +887,11 @@ function draw.norm(P,repMode)
             -- Draw spawn line
             gc_setLineWidth(4)
             gc_setColor(1,sin(t)*.4+.5,0,.5)
-            gc_rectangle('fill',0,fieldTop,300,4)
+            gc_rectangle('fill',0,fieldTop,30*P.gameEnv.fieldW,4)
 
             -- Draw height limit line
             gc_setColor(.4,.7+sin(t*12)*.3,1,.7)
-            gc_rectangle('fill',0,-ENV.heightLimit*30-FBN-2,300,4)
+            gc_rectangle('fill',0,-ENV.heightLimit*30-FBN-2,30*P.gameEnv.fieldW,4)
 
             -- Draw FXs
             _drawFXs(P)
@@ -863,21 +908,21 @@ function draw.norm(P,repMode)
                 -- Draw ghost & rotation center
                 local centerDisp=ENV.center and C.RS.centerDisp[C.id]
                 if ENV.ghost then
-                    drawGhost[ENV.ghostType](P.cur.bk,P.curX,P.ghoY,ENV.ghost,P.skinLib,curColor)
+                    drawGhost[ENV.ghostType](P.cur.bk,P.curX,P.ghoY,ENV.ghost,P.skinLib,curColor,P.cur,ENV)
                     if centerDisp then
                         gc_setColor(1,1,1,ENV.center)
                         gc_draw(C.RS.centerTex,centerX,-30*(P.ghoY+centerPos[1])+10)
                     end
                 elseif repMode then
-                    drawGhost.grayCell(P.cur.bk,P.curX,P.ghoY,.15,nil,nil)
+                    drawGhost.grayCell(P.cur.bk,P.curX,P.ghoY,.15,nil,nil,P.cur,ENV)
                 end
 
                 local dy=ENV.smooth and P.ghoY~=P.curY and (P.dropDelay/ENV.drop-1)*30 or 0
                 gc_translate(0,-dy)
                     -- Draw block & rotation center
                     if ENV.block then
-                        _drawBlockOutline(P.cur.bk,P.curX,P.curY,P.skinLib[curColor],trans)
-                        _drawBlock(P.cur.bk,P.curX,P.curY,P.skinLib[curColor])
+                        _drawBlockOutline(P.cur.bk,P.curX,P.curY,P.skinLib[curColor],trans,P.skinLib,P.cur,ENV)
+                        _drawBlock(P.cur.bk,P.curX,P.curY,P.skinLib[curColor],P.skinLib,P.cur,ENV)
                         if centerDisp then
                             gc_setColor(1,1,1,ENV.center)
                             gc_draw(C.RS.centerTex,centerX,-30*(P.curY+centerPos[1])+10)
@@ -1025,7 +1070,7 @@ function draw.small(P)
         local F=P.field
         local texture=SKIN.libMini[SETTING.skinSet]
         for j=1,#F do
-            for i=1,10 do if F[j][i]>0 then
+            for i=1,#F[j] do if F[j][i]>0 then
                 gc_draw(texture[F[j][i]],6*i-6,120-6*j)
             end end
         end
@@ -1084,13 +1129,13 @@ function draw.demo(P)
                 if P.alive and P.cur then
                     local curColor=P.cur.color
                     if ENV.ghost then
-                        drawGhost[ENV.ghostType](P.cur.bk,P.curX,P.ghoY,ENV.ghost,P.skinLib,curColor)
+                        drawGhost[ENV.ghostType](P.cur.bk,P.curX,P.ghoY,ENV.ghost,P.skinLib,curColor,P.cur,ENV)
                     end
                     if ENV.block then
                         local dy=ENV.smooth and P.ghoY~=P.curY and (P.dropDelay/ENV.drop-1)*30 or 0
                         gc_translate(0,-dy)
-                        _drawBlockOutline(P.cur.bk,P.curX,P.curY,P.skinLib[curColor],P.lockDelay/ENV.lock)
-                        _drawBlock(P.cur.bk,P.curX,P.curY,P.skinLib[curColor])
+                        _drawBlockOutline(P.cur.bk,P.curX,P.curY,P.skinLib[curColor],P.lockDelay/ENV.lock,P.skinLib,P.cur,ENV)
+                        _drawBlock(P.cur.bk,P.curX,P.curY,P.skinLib[curColor],P.skinLib,P.cur,ENV)
                         gc_translate(0,dy)
                     end
                 end

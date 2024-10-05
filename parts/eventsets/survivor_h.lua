@@ -16,10 +16,10 @@ return {
                     else
                         local s
                         if D.wave%3<2 then
-                            table.insert(P.atkBuffer,{line=generateLine(P.holeRND:random(10)),amount=1,countdown=0,cd0=0,time=0,sent=false,lv=1})
+                            table.insert(P.atkBuffer,{line=generateLine(P,P.holeRND:random(10)),amount=1,countdown=0,cd0=0,time=0,sent=false,lv=1})
                             s=1
                         else
-                            table.insert(P.atkBuffer,{line=generateLine(P.holeRND:random(10)),amount=3,countdown=60,cd0=60,time=0,sent=false,lv=2})
+                            table.insert(P.atkBuffer,{line=generateLine(P,P.holeRND:random(10)),amount=3,countdown=60,cd0=60,time=0,sent=false,lv=2})
                             s=3
                         end
                         P.atkBufferSum=P.atkBufferSum+s

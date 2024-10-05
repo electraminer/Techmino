@@ -44,7 +44,7 @@ local function _endZone(P)
 		if T then
 			local cancelledAttack = P:cancel(attack)
 			local sendTime = totalSendTime * i / #P.modeData.builtAttack -- Lines come in over time
-			P:attack(T,attack - cancelledAttack, sendTime, generateLine(P.atkRND:random(10)))
+			P:attack(T,attack - cancelledAttack, sendTime, generateLine(P,P.atkRND:random(10)))
 		end
 	end
 	P.modeData.builtAttack={}

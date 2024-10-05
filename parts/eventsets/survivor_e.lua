@@ -14,7 +14,7 @@ return {
                     if D.wave==100 then
                         P:win('finish')
                     else
-                        table.insert(P.atkBuffer,{line=generateLine(P.holeRND:random(10)),amount=1,countdown=30,cd0=30,time=0,sent=false,lv=1})
+                        table.insert(P.atkBuffer,{line=generateLine(P,P.holeRND:random(10)),amount=1,countdown=30,cd0=30,time=0,sent=false,lv=1})
                         P.atkBufferSum=P.atkBufferSum+1
                         P.stat.recv=P.stat.recv+1
                         if D.wave==45 then

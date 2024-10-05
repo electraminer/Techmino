@@ -16,12 +16,12 @@ return {
                 else
                     if D.wave<20 then
                         local t=1500-30*D.wave-- 1500~900
-                        table.insert(P.atkBuffer,{line=generateLine(P.holeRND:random(4,7)),amount=12,countdown=t,cd0=t,time=0,sent=false,lv=3})
-                        table.insert(P.atkBuffer,{line=generateLine(P.holeRND:random(3,8)),amount=10,countdown=t,cd0=t,time=0,sent=false,lv=4})
+                        table.insert(P.atkBuffer,{line=generateLine(P,P.holeRND:random(4,7)),amount=12,countdown=t,cd0=t,time=0,sent=false,lv=3})
+                        table.insert(P.atkBuffer,{line=generateLine(P,P.holeRND:random(3,8)),amount=10,countdown=t,cd0=t,time=0,sent=false,lv=4})
                     else
                         local t=900-10*(D.wave-20)-- 900~600
-                        table.insert(P.atkBuffer,{line=generateLine(P.holeRND:random(10)),amount=14,countdown=t,cd0=t,time=0,sent=false,lv=4})
-                        table.insert(P.atkBuffer,{line=generateLine(P.holeRND:random(4,7)),amount=8,countdown=t,cd0=t,time=0,sent=false,lv=5})
+                        table.insert(P.atkBuffer,{line=generateLine(P,P.holeRND:random(10)),amount=14,countdown=t,cd0=t,time=0,sent=false,lv=4})
+                        table.insert(P.atkBuffer,{line=generateLine(P,P.holeRND:random(4,7)),amount=8,countdown=t,cd0=t,time=0,sent=false,lv=5})
                     end
                     P.atkBufferSum=P.atkBufferSum+22
                     P.stat.recv=P.stat.recv+22

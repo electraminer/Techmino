@@ -33,6 +33,7 @@ return {
     hang=5,hurry=1e99,
     bone=false,
     lockout=false,
+    fieldW=10,
     fieldH=20,heightLimit=1e99,
     trueNextCount=10,nextCount=6,nextStartPos=1,
     holdMode='hold',holdCount=1,
@@ -53,6 +54,7 @@ return {
     freshLimit=1e99,easyFresh=true,
     bufferLimit=1e99,
     fillClear=true,
+    groupClear=false,
 
     layout='normal',
     fkey1=false,fkey2=false,
@@ -87,4 +89,9 @@ return {
 
     bg='none',bgm='race',
     allowMod=true,
+    blockColors={1,4,7,12},
+    groupClearable={[1]=true,[4]=true,[7]=true,[12]=true},
+    adjClearable={[19]=true,[20]=true,[21]=true,[22]=true,[23]=true},
+
+    preCascade = false,
 }
