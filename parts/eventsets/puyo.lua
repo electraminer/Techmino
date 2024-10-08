@@ -6,6 +6,8 @@ return {
     groupClear=true,
     cascade=true,
     preCascade=true,
+    wait=25,
+    fall=60,
     face={[28]=3},
     blockColors={1,4,7,12},
     groupClearable={[1]=true,[4]=true,[7]=true,[12]=true},

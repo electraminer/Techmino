@@ -2360,10 +2360,13 @@ do
 
         
         -- Fresh ARE
-        self.waiting=ENV.wait
+        self.waiting = ENV.wait
         -- Remove controling block
         self.cur=nil
-
+        
+        if #groupClear > 0 then
+            self:_updateFalling(ENV.fall)
+        end
 
         -- Mark blocks for cascade
         local cascadeBlocks = {}
@@ -2379,9 +2382,7 @@ do
         end
         self.fallingBlocks = cascadeBlocks
         self.chaining = self:_cascade(cascadeBlocks)
-        if self.chaining then
-            self:_updateFalling(self.gameEnv.fall)
-        else
+        if not self.chaining then
             self:send()
         end
 
@@ -2626,15 +2627,19 @@ do
                 end
             end
         end
+
+        local ENV = self.gameEnv
+        self.waiting = ENV.wait
+        if #groupClear > 0 then
+            self:_updateFalling(ENV.fall)
+        end
+
         self.fallingBlocks = cascadeBlocks
         self.chaining = self:_cascade(cascadeBlocks)
-        if self.chaining then
-            self:_updateFalling(self.gameEnv.fall)
-        else
+        if not self.chaining then
             self:send()
         end
 
-        self.waiting=self.gameEnv.wait
         if self.waiting==0 and self.falling==0 then
             self:spawn()
         end
