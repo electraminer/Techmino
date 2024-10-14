@@ -44,7 +44,7 @@ local function _endZone(P)
 		if T then
 			local cancelledAttack = P:cancel(attack)
 			local sendTime = totalSendTime * i / #P.modeData.builtAttack -- Lines come in over time
-			P:attack(T,attack - cancelledAttack, sendTime, generateLine(P.atkRND:random(10)))
+			P:attack(T.sid, attack - cancelledAttack, sendTime, generateLine(P.atkRND:random(10)))
 		end
 	end
 	P.modeData.builtAttack={}
@@ -92,12 +92,13 @@ return {
 		end
 
 		-- Replace attack function
+		local prevAttack = P.attack
 		function P:attack(target, send, time, line)
 			if P.modeData.Zone > 0 then
 				-- Total up sent attack
 				table.insert(P.modeData.builtAttack, send)
 			else
-				self:extraEvent('attack', target.sid, send, time, line)
+				prevAttack(self, target, send, time, line)
 			end
 		end
 

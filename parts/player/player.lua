@@ -913,23 +913,22 @@ function Player:ifoverlap(bk,x,y)
         end
     end
 end
-function Player:attack(R,send,time,line)
-    local sid = R.sid
+function Player:attack(target,send,time,line)
     -- Add the attack to the list of in-transit attacks.
     -- These attacks will be able to cancel with incoming attacks that cross them.
     if not self.inTransitAttacks then
         self.inTransitAttacks = {}
     end
-    if not self.inTransitAttacks[sid] then
-        self.inTransitAttacks[sid] = {seenAttacks = 0}
+    if not self.inTransitAttacks[target] then
+        self.inTransitAttacks[target] = {seenAttacks = 0}
     end
-    table.insert(self.inTransitAttacks[sid], {send=send, time=time, line=line})    
+    table.insert(self.inTransitAttacks[target], {send=send, time=time, line=line})    
     -- Send the attack
     -- We also send the number of seen attacks from this player.
     -- This allows that player to know which attacks are still in transit, and which have already arrived.
     -- This is because... if a player already saw an attack before sending this one, the attacks did not cross.
     -- But if they didn't see the attack, then the attacks must have crossed (and should cancel each other)
-    self:extraEvent('attack',sid,send,time,line,self.inTransitAttacks[sid].seenAttacks)
+    self:extraEvent('attack',target,send,time,line,self.inTransitAttacks[target].seenAttacks)
 end
 function Player:beAttacked(source,target_sid,send,time,line,seenCount)
     -- Only recieve the attack if you are the target.

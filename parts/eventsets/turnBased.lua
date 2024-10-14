@@ -198,9 +198,10 @@ local COMBO_TABLE = {0, 1, 1, 2, 3, 4, 3, 2}
 
 function initTargeting(P)
     -- Override attacks to choose a deterministic target and save it
+    local prevAttack = P.attack
     function P:attack(target, send, time, line)
         local target = getTarget(P)
-        self:extraEvent('attack', target, send, time, line)
+        prevAttack(self, target, send, time, line)
         P.modeData.lastTarget = target
     end
 end
