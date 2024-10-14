@@ -281,7 +281,11 @@ function Player:act_rotRight()
         end
         self:spin(1)
         self:_triggerEvent('hook_rotate',1)
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> irs
         -- Disable held inputs if IRS is off
         if not self.gameEnv.irs then
             self.keyPressing[3]=false
@@ -337,7 +341,10 @@ function Player:act_hardDrop()
             SFX.play('drop_cancel',.3)
         else
             if self.bufferedIRS then
+<<<<<<< HEAD
 
+=======
+>>>>>>> irs
                 -- If the player drops quicker than their IRS cut delay, make sure IRS still resolves.
                 self:resolveIRS()
             end
@@ -1212,7 +1219,11 @@ function Player:resetBlock()-- Reset Block's position and execute I*S
     self.curY=y
     self.minY=y+sc[1]
 
+<<<<<<< HEAD
     local ENV=self.gameEnv
+=======
+    local ENV = self.gameEnv
+>>>>>>> irs
 
     -- In the game settings, there are user-set control flags for irs,irs,ims
     -- These control in what way the user can buffer their rotate/hold/move inputs.
@@ -1228,10 +1239,17 @@ function Player:resetBlock()-- Reset Block's position and execute I*S
     -- IMS is enabled only when logicalIMS is enabled, because otherwise, it's just faster DAS.
     if ENV.logicalIMS and (pressing[1] and self.movDir==-1 or pressing[2] and self.movDir==1) and self.moving>=self.gameEnv.das then
         -- To avoid a top-out
+<<<<<<< HEAD
         if self:ifoverlap(C.bk,self.curX,self.curY) then
             -- Always perform the shift, since you're topped out anyway
             self.curX=self.curX+self.movDir
         elseif ENV.wait>0 and ENV.ims then
+=======
+        if self:ifoverlap(C.bk, self.curX, self.curY) then
+            -- Always perform the shift, since you're topped out anyway
+            self.curX = self.curX + self.movDir
+        elseif ENV.wait > 0 and ENV.ims then
+>>>>>>> irs
             -- Otherwise, only check IMS if it's enabled and you're in a mode with entry delay (20g)
             local x=self.curX+self.movDir
             if not self:ifoverlap(C.bk,x,y) then
@@ -1242,6 +1260,7 @@ function Player:resetBlock()-- Reset Block's position and execute I*S
 
     if not ENV.logicalIRS then
         -- If logical IRS is disabled, all IRS inputs will be buffered to prevent survival.
+<<<<<<< HEAD
         self.bufferedIRS=true
         self.bufferedDelay=0
         if ENV.wait==0 then
@@ -1251,6 +1270,17 @@ function Player:resetBlock()-- Reset Block's position and execute I*S
         -- If IRS cut delay is enabled and we aren't currently dying, buffer the input instead.
         self.bufferedIRS=true
         self.bufferedDelay=ENV.irscut
+=======
+        self.bufferedIRS = true
+        self.bufferedDelay = 0
+        if ENV.wait == 0 then
+            self.bufferedDelay = ENV.irscut
+        end
+    elseif ENV.wait==0 and ENV.irscut>0 and not self:ifoverlap(C.bk, self.curX, self.curY) then
+        -- If IRS cut delay is enabled and we aren't currently dying, buffer the input instead.
+        self.bufferedIRS = true
+        self.bufferedDelay = ENV.irscut
+>>>>>>> irs
     else
         -- If we're currently dying or in an entry-delay mode (20g), perform the rotation right away.
         if pressing[5] then
@@ -1595,6 +1625,7 @@ function Player:_popNext(ifhold)-- Pop nextQueue to hand
     if not ifhold and pressing[8] and self.holdTime>0 then
         if not ENV.logicalIHS then
             -- If logical IHS is disabled, all IHS inputs will be buffered to prevent survival.
+<<<<<<< HEAD
             self.bufferedIRS=true
             self.bufferedIHS=true
             self.bufferedDelay=0
@@ -1606,6 +1637,19 @@ function Player:_popNext(ifhold)-- Pop nextQueue to hand
             self.bufferedIRS=true
             self.bufferedIHS=true
             self.bufferedDelay=ENV.irscut
+=======
+            self.bufferedIRS = true
+            self.bufferedIHS = true
+            self.bufferedDelay = 0
+            if ENV.wait == 0 then
+                self.bufferedDelay = ENV.irscut
+            end
+        elseif ENV.wait==0 and ENV.irscut>0 and not self:willDieWith(self.cur) then
+            -- If IRS cut delay is enabled and we're not currently dying, buffer the input instead.
+            self.bufferedIRS = true
+            self.bufferedIHS = true
+            self.bufferedDelay = ENV.irscut
+>>>>>>> irs
             self:resetBlock()
         else
             -- If we're currently dying or in an entry-delay mode (20g), perform the hold immediately.
@@ -2468,7 +2512,15 @@ local function _updateMisc(P,dt)
     -- Push up garbages
     local y=P.fieldBeneath
     if y>0 then
-        P.fieldBeneath=max(y-P.gameEnv.pushSpeed,0)
+        local newFieldBeneath = max(y-P.gameEnv.pushSpeed,0)
+        
+        P.fieldBeneath = newFieldBeneath
+        -- If pushing up garbage will block IHS, then resolve IHS early
+        if P.bufferedIHS and P:willDieWith(P.holdQueue[1]) then
+            P.fieldBeneath = y
+            P:resolveIRS(P.fieldBeneath)
+            P.fieldBeneath = newFieldBeneath
+        end
     end
 
     -- Move camera
@@ -2568,13 +2620,22 @@ local function _updateFX(P,dt)
 end
 
 function Player:resolveIRS()
-    if self.bufferedIHS then
+    local pressing=self.keyPressing
+    if self.bufferedIHS and pressing[8] then
         self:hold(true)
+<<<<<<< HEAD
         self.bufferedIHS=false
+=======
+>>>>>>> irs
     end
+    self.bufferedIHS=false
 
+<<<<<<< HEAD
     self.bufferedIRS=false
     local pressing=self.keyPressing
+=======
+    self.bufferedIRS = false
+>>>>>>> irs
     if pressing[5] then
         self:act_rot180()
     elseif pressing[3] then
@@ -2646,12 +2707,12 @@ local function update_alive(P,dt)
         end
     end
     
-    -- Buffer IRS after DAS cut delay has elapsed.
-    -- The purpose of this is to allow the player to release their rotate key during the DAS cut delay, which will
-    -- allow them to avoid accidentally using IRS.
+    -- Buffer IRS after IRS cut delay has elapsed.
+    -- The purpose of this is to allow the player to release their rotate key during the IRS cut delay,
+    -- which will allow them to avoid accidentally using IRS.
     if P.bufferedDelay then
         P.bufferedDelay = P.bufferedDelay - 1
-        if P.bufferedDelay == 0 then
+        if P.bufferedDelay <= 0 then
             if P.bufferedIRS then
                 P:resolveIRS()
             end
