@@ -55,6 +55,7 @@ end
 function scene.enter()
     sure=0
     destroyPlayers()
+    DiscordRPC.update("Creating new room...")
 end
 function scene.leave()
     BGM.play()

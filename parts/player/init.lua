@@ -246,7 +246,7 @@ local function _mergeFuncTable(f,L)
     end
     return L
 end
-local hooks = {
+local tableNeedMerge = {
     'task',
     'mesDisp',
     'hook_left',
@@ -267,8 +267,8 @@ local function _applyGameEnv(P)-- Finish gameEnv processing
     local ENV=P.gameEnv
 
     -- Apply events
-    for i=1,#hooks do
-        ENV[hooks[i]]=_mergeFuncTable(ENV[hooks[i]],{})
+    for i=1,#tableNeedMerge do
+        ENV[tableNeedMerge[i]]=_mergeFuncTable(ENV[tableNeedMerge[i]],{})
     end
 
     -- Apply eventSet
@@ -293,7 +293,7 @@ local function _applyGameEnv(P)-- Finish gameEnv processing
                                 ENV.extraEventHandler[ev] = handler
                             end
                         end
-                    elseif TABLE.find(hooks,k) then
+                    elseif TABLE.find(tableNeedMerge,k) then
                         _mergeFuncTable(v,ENV[k])
                     elseif type(v)=='table' then
                         ENV[k]=TABLE.copy(v)

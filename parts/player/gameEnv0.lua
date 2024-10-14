@@ -70,16 +70,15 @@ return {
     task={},
 
     extraEvent={
-        {'attack', 4},
-        {'removePlayer', 1},
+        {'attack',5},
+        {'removePlayer',1},
     },
     extraEventHandler={
-        attack=function(P, source, ...)
-            P:beAttacked(source, ...)
+        attack=function(P,source,...)
+            P:beAttacked(source,...)
         end,
 
-        removePlayer=function(P, source, ...)
-        
+        removePlayer=function(P,source,...)
         end,
     },
 
