@@ -336,10 +336,6 @@ function Player:act_hardDrop()
             SFX.play('drop_cancel',.3)
         else
             if self.bufferedIRS then
-<<<<<<< HEAD
-
-=======
->>>>>>> irs
                 -- If the player drops quicker than their IRS cut delay, make sure IRS still resolves.
                 self:resolveIRS()
             end
