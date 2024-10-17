@@ -1150,10 +1150,11 @@ function Player:_cascade(cascadeBlocks)
     return boardModified
 end
 
-function Player:_checkGroupClear(field)
+function Player:_checkGroupClear()
     local seen = {}
     local groups = {}
     local adjGroups = {}
+    local field = self.field;
     for y=1,#field do
         local row = field[y]
         for x=1,#row do
@@ -1192,40 +1193,36 @@ function Player:_checkGroupClear(field)
 end
 
 
-function Player:_checkClear(field,start,height,CB,CX)
+function Player:_checkRowClear(changedBlocks)
     local cc,gbcc=0,0
+    local field = self.field;
+    -- For each row
     for h=1,#field do
 
-        h=h-1
-
-        -- Bomb trigger (optional, must with CB)
-        if CB and h>0 and field[h] and self.clearedRow[cc]~=h then
-            for x=1,#CB[1] do
-                if CB[h - start+1] and CB[h - start+1][x] and field[h][CX+x-1]==19 then
-                    cc=cc+1
-                    self.clearingRow[cc]=h-cc+1
-                    self.clearedRow[cc]=h
-                    break
-                end
-            end
-        end
-
-        h=h+1
-        -- Row filled
-        local full=true
+        local full=false-- Check if row filled
         for x=1,self.gameEnv.fieldW do
-            if field[h][x]<=0 then
+            -- Only clear the row if it was changed
+            if changedBlocks[x + h*#field[h]] then
+                full=true
+            end
+            if not self.gameEnv.rowClearable[field[h][x]] then
                 full=false
-                break-- goto CONTINUE_notFull
+                break
+            end
+            -- Bomb trigger if changed block above a bomb
+            if self.gameEnv.bombClearable[field[h][x]] and changedBlocks[x + (h+1)*#field[h]] then
+                full = true
+                break
             end
         end
+
+        -- Clear the row
         if full then
             cc=cc+1
             if field[h].garbage then gbcc=gbcc+1 end
             ins(self.clearingRow,h-cc+1)
             ins(self.clearedRow,h)
         end
-        -- ::CONTINUE_notFull::
     end
     return cc,gbcc
 end
@@ -1958,37 +1955,32 @@ do
             TABLE.cut(self.clearedRow)
         end
 
-        -- Pre-cascade - needs work (should possibly incur extra animation delay?)
-        if self.gameEnv.preCascade then
-            -- Mark blocks for cascade
-            local cascadeBlocks = {}
-            if self.gameEnv.cascade then
-                -- Mark blocks for cascade
-                for y,row in ipairs(self.field) do
-                    for x,cell in ipairs(row) do
-                        if cell then
-                            cascadeBlocks[x + y * #row] = true
-                        end
-                    end
+        -- Calculate list of changed blocks
+        local changedBlocks = {}
+        for i=1,#CB do
+            local CR=CB[i]
+            for j=1,#CR do
+                if CR[j] then
+                    changedBlocks[CX+j-1 + (CY+i-1)*self.gameEnv.fieldW] = true
                 end
             end
-            if self:_cascade(cascadeBlocks) then
-                -- Currently, just do the cascade instantly.
-                -- Could possibly delay line clears and only perform after the cascade animation.
+        end
+
+        -- Piece cascade - whether the individual piece you place will cascade
+        if self.gameEnv.pieceCascade then
+            local cascadeBlocks = TABLE.copy(changedBlocks)
+            self:_cascade(cascadeBlocks)
+            for idx,_ in next,cascadeBlocks do
+                changedBlocks[idx] = true
             end
         end
 
-        local groupClear, adjClear = {}, {}
         -- Check group clear (PUYO)
-        if self.gameEnv.groupClear then
-            groupClear, adjClear = self:_checkGroupClear(self.field)
-        end
+        local groupClear, adjClear = self:_checkGroupClear()
 
         -- Check line clear
-        if self.gameEnv.fillClear then
-            local _cc,_gbcc=self:_checkClear(self.field,CY,#CB,CB,CX)
-            cc,gbcc=cc+_cc,gbcc+_gbcc
-        end
+        local _cc,_gbcc=self:_checkRowClear(changedBlocks)
+        cc,gbcc=cc+_cc,gbcc+_gbcc
 
         -- Create clearing FX
         for i=1,cc do
@@ -2370,7 +2362,7 @@ do
 
         -- Mark blocks for cascade
         local cascadeBlocks = {}
-        if self.gameEnv.cascade then
+        if self.gameEnv.cascade and (cc > 0 or #groupClear > 0)then
             -- Mark blocks for cascade
             for y,row in ipairs(self.field) do
                 for x,cell in ipairs(row) do
@@ -2549,17 +2541,12 @@ do
             TABLE.cut(self.clearedRow)
         end
 
-        local groupClear, adjClear = {}, {}
         -- Check group clear (PUYO)
-        if self.gameEnv.groupClear then
-            groupClear, adjClear = self:_checkGroupClear(self.field)
-        end
+        local groupClear, adjClear = self:_checkGroupClear()
 
         local lineClear = {}
         -- Check line clear
-        if self.gameEnv.fillClear then
-            lineClear = self:_checkClear(self.field,1,#self.field,{{}},1)
-        end
+        lineClear = self:_checkRowClear(self.fallingBlocks)
 
         if #groupClear > 0 then
             local size = 0
@@ -2615,9 +2602,11 @@ do
 
         -- Remove rows need to be cleared
         self:_removeClearedLines()
+        
+        clear=self:removeTopClearingFX()
 
         local cascadeBlocks = {}
-        if self.gameEnv.cascade then
+        if self.gameEnv.cascade and (lineClear > 0 or #groupClear > 0) then
             -- Mark blocks for cascade
             for y,row in ipairs(self.field) do
                 for x,cell in ipairs(row) do
@@ -2646,7 +2635,7 @@ do
     end
 
     function Player:clearFilledLines(start,height)
-        local _cc,_gbcc=self:_checkClear(self.field,start,height)
+        local _cc,_gbcc=self:_checkRowClear(self.field,start,height)
         if _cc>0 then
             playClearSFX(_cc)
             if self.sound then

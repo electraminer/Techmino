@@ -1,6 +1,6 @@
 return {
     fieldH=20,
-    fillClear=false,
+    fillClearable={},
     mesDisp=function(P)
         setFont(60)
         GC.mStr(P.stat.row,63,280)

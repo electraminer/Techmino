@@ -53,8 +53,6 @@ return {
     visible='show',
     freshLimit=1e99,easyFresh=true,
     bufferLimit=1e99,
-    fillClear=true,
-    groupClear=false,
 
     layout='normal',
     fkey1=false,fkey2=false,
@@ -90,10 +88,19 @@ return {
     bg='none',bgm='race',
     allowMod=true,
     
+    -- What block colors are used (Puyo colors)
     blockColors=false,
+    -- Clearable via normal Tetris rows
+    rowClearable={true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true},
+    -- Clearable via a bomb
+    bombClearable={[19]=true},
+    -- Clearable via Puyo groups
     groupClearable={},
+    -- Clearable if adjacent to a Puyo group (Puyo garbage)
     adjClearable={},
 
-    preCascade = false,
+    -- Whether to cascade the piece itself
+    pieceCascade = false,
+    -- Whether to cascade blocks during a chain
     cascade = false,
 }

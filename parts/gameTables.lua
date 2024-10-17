@@ -336,6 +336,7 @@ EVENTSETS={
     'X',
     'puyo',
     'stack_tec',
+    'turnBased_puyo',
     'turnBased', 'turnBased_rapid', 'turnBased_blitz', 'turnBased_bullet', 'turnBased_extended', 'turnBased_long', 'turnBased_untimed',
     'attacker_h','attacker_u',
     'backfire_120','backfire_60','backfire_30','backfire_0',
