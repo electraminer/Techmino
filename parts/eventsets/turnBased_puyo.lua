@@ -648,7 +648,7 @@ function turnBased(timeControls) return {
         P.atk = P.atk * 6
 
         -- Delay the garbage by the chain length
-        P.lastPiece.sendTime = P.lastPiece.chainLength * 
+        P.lastPiece.sendTime = P.lastPiece.chainLength
     end,
     
     fkey1 = function(P)
