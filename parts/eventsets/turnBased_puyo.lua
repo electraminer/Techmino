@@ -245,6 +245,7 @@ function undo(P)
     if #P.modeData.savestates >= 1 then
         loadState(P)
     end
+    P.waiting = 0
 end
 
 local function undoAtk(P)
@@ -448,7 +449,6 @@ function advancePeriod(P)
     end
     P.gameEnv.drop = gravity
     P.dropDelay = gravity
-    MES.new('', gravity)
 end
 
 function initPuyoGarbage(P)
@@ -810,22 +810,7 @@ function turnBased(timeControls) return {
             GC.pop()
         end
 
-        -- Display combo table
-        setFont(24)
-        GC.mStr("Combo", 62, 260)
-        for i,bonus in ipairs(COMBO_TABLE) do
-            local string = bonus;
-            GC.setColor(COLOR.white);
-            if P.combo == i then
-                local animationCycle = (P.stat.frame % 60) / 60
-                animationCycle = math.abs(animationCycle-0.5)*2
-                string = "> " .. bonus .. " <"
-                GC.setColor(1, animationCycle, animationCycle);
-            end
-            GC.mStr(string, 62, 260 + 24 * i)
-        end
-        GC.mStr("PC: "..math.min(8+P.stat.pc*2, 16), 62, 260 + 24 * (#COMBO_TABLE + 1))
-
+        
         -- Display time remaining
         setFont(30)
         if P.modeData.turnTime < 1e98 then
