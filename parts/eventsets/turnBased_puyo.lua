@@ -544,8 +544,6 @@ function turnBased(timeControls) return {
     sequence='bag',seqData={28},
     cascade=true,
     pieceCascade=true,
-    wait=25,
-    fall=60,
     face={[28]=3},
     blockColors={1,4,7,12},
     rowClearable={},
@@ -555,6 +553,11 @@ function turnBased(timeControls) return {
     timeControls = timeControls,
 
     task = function(P)
+
+        if P.gameEnv.fall < 15 then
+            P.gameEnv.fall = 15
+        end
+
         initMainTimer(P)
         initTurnTimer(P)
         initSpeedSettings(P)
