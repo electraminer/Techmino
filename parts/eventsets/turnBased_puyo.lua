@@ -609,8 +609,9 @@ function turnBased(timeControls) return {
 
     hook_drop = function(P)
         for i=1,#P.atkBuffer do
-            P.atkBuffer[i].sendTime = P.atkBuffer[i].sendTime - 1
+            P.atkBuffer[i].countdown = P.atkBuffer[i].countdown - 1
         end
+
         -- End turn
         local turnPieces = P.stat.piece - P.modeData.startedTurnAtPiece
         P.cur = nil
