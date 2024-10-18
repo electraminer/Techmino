@@ -360,7 +360,7 @@ function commit(P)
         initTurnTimer(P)
         P:extraEvent('passTurn')
     else
-        P.waiting = false
+        P.waiting = 0
     end
 end
 
