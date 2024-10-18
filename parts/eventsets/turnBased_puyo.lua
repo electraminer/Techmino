@@ -359,6 +359,8 @@ function commit(P)
         P.control = false
         initTurnTimer(P)
         P:extraEvent('passTurn')
+    else
+        P.waiting = false
     end
 end
 
@@ -864,8 +866,10 @@ function turnBased(timeControls) return {
             end
             if P.modeData.checkmate == true then
                 GC.mStr(key.." to concede", 300, 10)
-            else
+            elseif piecesRemaining == 0 then
                 GC.mStr(key.." to pass", 300, 10)
+            else
+                GC.mStr(key.." to commit", 300, 10)
             end
             GC.mStr(key2.." to undo", 300, 40)
         elseif piecesRemaining == 1 then
