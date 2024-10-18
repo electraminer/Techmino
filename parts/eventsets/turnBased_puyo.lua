@@ -212,6 +212,11 @@ end
 function startTurn(P)
     P.modeData.startedTurnAtPiece = P.stat.piece
     P.modeData.startingPeriod = P.modeData.period
+
+    -- Add extra turns for each countdown
+    for i=1,#P.atkBuffer do
+        P.modeData.startedTurnAtPiece = P.modeData.startedTurnAtPiece - P.atkBuffer[i].countdown
+    end
     
     P.control = true
     P.waiting = 0
@@ -608,8 +613,9 @@ function turnBased(timeControls) return {
     end,
 
     hook_drop = function(P)
-        for i=1,#P.atkBuffer do
-            P.atkBuffer[i].countdown = P.atkBuffer[i].countdown - 1
+        -- Count down garbage one turn at a time
+        if P.atkBuffer[1] then
+            P.atkBuffer[1].countdown = P.atkBuffer[1].countdown - 1
         end
 
         -- End turn
@@ -621,6 +627,9 @@ function turnBased(timeControls) return {
         if turnPieces == 7 then
             P.waiting = 1e99
         end
+        -- if #P.nextQueue == 0 then
+        --     P.waiting = 1e99
+        -- end
         -- Auto commit
         tryAutoCommit(P)
     end,
