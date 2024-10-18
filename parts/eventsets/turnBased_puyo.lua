@@ -215,7 +215,7 @@ function startTurn(P)
 
     -- Add extra turns for each countdown
     for i=1,#P.atkBuffer do
-        P.modeData.startedTurnAtPiece = P.modeData.startedTurnAtPiece - P.atkBuffer[i].countdown
+        P.modeData.startedTurnAtPiece = P.modeData.startedTurnAtPiece + P.atkBuffer[i].countdown
     end
     
     P.control = true
