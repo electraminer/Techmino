@@ -222,12 +222,6 @@ function startTurn(P)
 end
 
 function undo(P)
-    
-    -- Don't allow commit during chains
-    if P.waiting > 0 or P.falling > 0 then
-        return
-    end
-
     -- Undo disabled during periods
     if P.modeData.period > 0 then return end
 
@@ -239,7 +233,9 @@ function undo(P)
             P:extraEvent('undoAtk', savestate.atkTarget)
         end
         -- Except only remove it if we are not mid-animation
-        P.modeData.savestates[#P.modeData.savestates] = nil
+        if not P.chaining then
+            P.modeData.savestates[#P.modeData.savestates] = nil
+        end
     end
     if #P.modeData.savestates >= 1 then
         loadState(P)
@@ -339,7 +335,7 @@ end
 
 function commit(P)
     -- Don't allow commit during chains
-    if P.waiting > 0 or P.falling > 0 then
+    if P.chaining then
         return
     end
     if P.modeData.checkmate == true then
