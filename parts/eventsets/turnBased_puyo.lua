@@ -627,9 +627,9 @@ function turnBased(timeControls) return {
         if turnPieces == 7 then
             P.waiting = 1e99
         end
-        -- if #P.nextQueue == 0 then
-        --     P.waiting = 1e99
-        -- end
+        if #P.nextQueue == 0 then
+            P.waiting = 1e99
+        end
         -- Auto commit
         tryAutoCommit(P)
     end,
