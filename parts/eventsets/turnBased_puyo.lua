@@ -367,7 +367,7 @@ end
 function initSpeedSettings(P)
     P.gameEnv.drop = 1e99
     P.gameEnv.lock = 1e99
-    P.gameEnv.garbageSpeed = 1e99
+    P.gameEnv.garbageSpeed = 0
     P.gameEnv.pushSpeed = 1e99
     P.gameEnv.infHold = true
     P.gameEnv.freshLimit = 1e99
@@ -608,6 +608,9 @@ function turnBased(timeControls) return {
     end,
 
     hook_drop = function(P)
+        for i=1,#P.atkBuffer do
+            P.atkBuffer[i].sendTime = P.atkBuffer[i].sendTime - 1
+        end
         -- End turn
         local turnPieces = P.stat.piece - P.modeData.startedTurnAtPiece
         P.cur = nil
@@ -643,6 +646,9 @@ function turnBased(timeControls) return {
         
         -- Rescale attack to be measured in terms of puyos, instead of rows
         P.atk = P.atk * 6
+
+        -- Delay the garbage by the chain length
+        P.lastPiece.sendTime = P.lastPiece.chainLength * 
     end,
     
     fkey1 = function(P)
