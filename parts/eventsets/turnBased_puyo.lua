@@ -232,15 +232,12 @@ function undo(P)
 
     -- Remove the first savestate so you actually go to the previous piece
     local savestate = nil
-    if #P.modeData.savestates >= 2 then
+    if #P.modeData.savestates >= 2 and not P.chaining then
         local savestate = P.modeData.savestates[#P.modeData.savestates]
         if savestate.atkTarget ~= 0 then
             P:extraEvent('undoAtk', savestate.atkTarget)
         end
-        -- Except only remove it if we are not mid-animation
-        if not P.chaining then
-            P.modeData.savestates[#P.modeData.savestates] = nil
-        end
+        P.modeData.savestates[#P.modeData.savestates] = nil
     end
     if #P.modeData.savestates >= 1 then
         loadState(P)
