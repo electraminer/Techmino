@@ -147,7 +147,7 @@ local function _applyField(P)
     -- Move camera
     gc_push('transform')
     _boardTransform(P.gameEnv.flipBoard)
-    gc_translate(0,P.fieldBeneath+P.fieldUp)
+    gc_translate(0,(P.fieldBeneath+P.fieldUp)*10/P.gameEnv.fieldW)
 end
 local function _cancelField()
     gc_setStencilTest()
@@ -779,7 +779,7 @@ draw.drawGhost=drawGhost
 draw.applyField=_applyField
 draw.cancelField=_cancelField
 function draw.drawTargetLine(P,h,overrideColor)
-    if h<=20+(P.fieldBeneath+P.fieldUp+10)/30 and h>0 then
+    if h<=P.gameEnv.fieldW*2+(P.fieldBeneath+P.fieldUp+10)/30 and h>0 then
         gc_setLineWidth(3)
         if not overrideColor then
             gc_setColor(1,h>10 and 0 or .2+.8*rnd(),.5)
@@ -797,7 +797,7 @@ function draw.drawTargetLine(P,h,overrideColor)
     end
 end
 function draw.drawMarkLine(P,h,r,g,b,a)
-    if h<=20+(P.fieldBeneath+P.fieldUp+10)/30 and h>0 then
+    if h<=P.gameEnv.fieldW*2+(P.fieldBeneath+P.fieldUp+10)/30 and h>0 then
         gc_setLineWidth(4)
         gc_setColor(r,g,b,a)
         _applyField(P)

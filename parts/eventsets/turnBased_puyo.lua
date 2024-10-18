@@ -114,6 +114,8 @@ local function savestateCtx(P)
         'spikeTime', 'spike', 'spikeText',
         'life', 'result',
         'lastPiece',
+        'falling', 'fallingBlocks', 'chaining',
+        'holeRND',
     }, {'speculativeAtk', 'combo', 'checkmate'}}
     local blacklist = {false, false}
     return saved, whitelist, blacklist
@@ -220,6 +222,12 @@ function startTurn(P)
 end
 
 function undo(P)
+    
+    -- Don't allow commit during chains
+    if P.waiting > 0 or P.falling > 0 then
+        return
+    end
+
     -- Undo disabled during periods
     if P.modeData.period > 0 then return end
 
@@ -230,6 +238,7 @@ function undo(P)
         if savestate.atkTarget ~= 0 then
             P:extraEvent('undoAtk', savestate.atkTarget)
         end
+        -- Except only remove it if we are not mid-animation
         P.modeData.savestates[#P.modeData.savestates] = nil
     end
     if #P.modeData.savestates >= 1 then
@@ -253,7 +262,6 @@ local function initRNG(P)
     end
     -- We are adding two separate generations together to ensure no correlation.
     local seed = P.seqRND:random(256*256*256) + P.seqRND:random(703*703)
-    P.modeData.uniqueRND = love.math.newRandomGenerator(seed)
     -- Replace the RNG queues with the new unique ones.
     P.seqRND = love.math.newRandomGenerator(seed)
     P.holeRND = love.math.newRandomGenerator(seed)
@@ -330,6 +338,10 @@ function initSpeculativeAtk(P)
 end
 
 function commit(P)
+    -- Don't allow commit during chains
+    if P.waiting > 0 or P.falling > 0 then
+        return
+    end
     if P.modeData.checkmate == true then
         P.result = nil
         P:checkmate()

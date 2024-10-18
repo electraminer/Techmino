@@ -158,23 +158,21 @@ function Player:createClearingFX(y)
         ins(self.clearFX,{y,0,7-self.gameEnv.clearFX})
     end
 end
-function Player:createSplashFX(h)
+function Player:createSplashFX(x,h)
     if self.gameEnv.splashFX then
         local L=self.field[h]
         local size=self.size
-        local y=self.fieldY+size*(self.swingOffset.y+self.fieldBeneath+self.fieldUp+615)-30*h*size
-        for x=1,self.gameEnv.fieldW do
-            local c=L[x]
-            if c>0 then
-                SYSFX.newCell(
-                    2.5-self.gameEnv.splashFX*.4,
-                    self.skinLib[c],
-                    size,
-                    self.fieldX+(30*x-15)*size,y,
-                    rnd()*5-2.5,rnd()*-1,
-                    0,.6
-                )
-            end
+        local y=self.fieldY+size*(self.swingOffset.y+self.fieldBeneath+self.fieldUp+615)-30*h*size*10/self.gameEnv.fieldW
+        local c=L[x]
+        if c>0 then
+            SYSFX.newCell(
+                2.5-self.gameEnv.splashFX*.4,
+                self.skinLib[c],
+                size*10/self.gameEnv.fieldW,
+                self.fieldX+(30*x*10/self.gameEnv.fieldW-15)*size,y,
+                rnd()*5-2.5,rnd()*-1,
+                0,.6
+            )
         end
     end
 end
@@ -1986,7 +1984,15 @@ do
         for i=1,cc do
             local y=self.clearedRow[i]
             self:createClearingFX(y)
-            self:createSplashFX(y)
+            for x = 1,self.gameEnv.fieldW do
+                self:createSplashFX(x, y)
+            end
+        end
+        for i=1,#groupClear do
+            local group = groupClear[i]
+            for j=1,#group do
+                self:createSplashFX(group[j].x, group[j].y)
+            end
         end
 
         -- Create locking FX
@@ -2548,6 +2554,22 @@ do
         -- Check line clear
         lineClear = self:_checkRowClear(self.fallingBlocks)
 
+        
+        -- Create clearing FX
+        for i=1,lineClear do
+            local y=self.clearedRow[i]
+            self:createClearingFX(y)
+            for x = 1,self.gameEnv.fieldW do
+                self:createSplashFX(x, y)
+            end
+        end
+        for i=1,#groupClear do
+            local group = groupClear[i]
+            for j=1,#group do
+                self:createSplashFX(group[j].x, group[j].y)
+            end
+        end
+
         if #groupClear > 0 then
             local size = 0
             local power = 0
@@ -2819,7 +2841,11 @@ local function _updateMisc(P,dt)
         if not P.alive then
             y=0
         else
-            y=30*max(min(#P.field-18.5-P.fieldBeneath/30,P.ghoY-17),0)
+            local W = P.gameEnv.fieldW
+            local H = W * 2
+            local target = #P.field - H + 1.5 - P.fieldBeneath/30
+            local upperBound = P.ghoY - H + 3
+            y=max(min(target, upperBound), 0) * 30
         end
         local f=P.fieldUp
         if f~=y then
