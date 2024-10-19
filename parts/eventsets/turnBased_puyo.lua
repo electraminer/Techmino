@@ -115,7 +115,6 @@ local function savestateCtx(P)
         'life', 'result',
         'lastPiece',
         'falling', 'fallingBlocks', 'chaining',
-        'holeRND',
     }, {'speculativeAtk', 'combo', 'checkmate'}}
     local blacklist = {false, false}
     return saved, whitelist, blacklist
@@ -271,7 +270,7 @@ local function initRNG(P)
         P:newNext()
     end
     -- Now create a new bag. Everyone will get the same non-bag first piece.
-    P.nextQueue = {P.nextQueue[1]}
+    -- P.nextQueue = {P.nextQueue[1]}
     -- Piece is gray to indicate it's not part of the bag.
     P.nextQueue[1].color = 20
     for _=1,7 do
@@ -301,38 +300,6 @@ function initSpeculativeNext(P)
         end
         P.modeData.duringSpeculaton = nil
         P.modeData.lastCommitAtPiece = P.stat.piece
-    end
-end
-
-function initSpeculativeAtk(P)
-    local garbageRise = P.garbageRise
-    -- Rising garbage is converted into speculation.
-    P.modeData.speculativeAtk = {}
-    local garbageRise = P.garbageRise
-    function P:garbageRise(color, amount, line)
-        garbageRise(P, color, amount, 1023)
-        table.insert(P.modeData.speculativeAtk, amount)
-        tryAutoCommit(self) -- Try auto commit immediately, to ensure ColdClear never sees filled lines.
-    end
-    -- Speculation is converted into generating garbage holes on a commit.
-    P.modeData.atkLast = P.holeRND:random(10)
-    function P:commitGarbageRise()
-        local totalAtk = 0
-        for _,atk in ipairs(P.modeData.speculativeAtk) do
-            totalAtk = totalAtk + atk
-        end
-        for _,atk in ipairs(P.modeData.speculativeAtk) do
-            local position = P.holeRND:random(9)
-            if position >= P.modeData.atkLast then
-                position = position + 1
-            end
-            P.modeData.atkLast = position
-            for _=1,atk do
-                P.field[totalAtk][position] = 0
-                totalAtk = totalAtk - 1
-            end
-        end
-        P.modeData.speculativeAtk = {}
     end
 end
 
@@ -450,14 +417,28 @@ end
 
 function initPuyoGarbage(P)
     local W = P.gameEnv.fieldW
+
+    local receive = P.receive
+    function P:receive(atker, send, time, line)
+        -- Rather than a single hole in the line, Puyo garbage would be determined based on which columns are used.
+        local order = {}
+        for i=1,P.gameEnv.fieldW do
+            local index = self.holeRND.random(i)
+            table.insert(order, index, i)
+        end
+        receive(self, atker, send, time, order)
+    end
+
     -- Change garbage release to not release more than a rock (30 puyo) at once
     function P:garbageRelease()-- Check garbage buffer and try to release them
         local n=1
         local totalRecv = 0
+        local order = nil
         while true do
             local A=self.atkBuffer[n]
             if A and A.countdown<=0 and not A.sent then
                 totalRecv = totalRecv + A.amount
+                order = A.line
                 if totalRecv > W*5 then
                     -- If put over 30, then only take the amount which hits 30
                     local extra = totalRecv - W*5
@@ -509,13 +490,10 @@ function initPuyoGarbage(P)
         end
         -- Insert a partially filled line
         local line = LINE.new(0,true,W)
-        for i=1,totalRecv % W do
-            local pos = self.holeRND:random(W)
-            while line[pos] ~= 0 do
-                -- Reroll
-                pos = self.holeRND:random(W)
+        for i=1,W do
+            if order[i] <= totalRecv % W then
+                line[i] = 20
             end
-            line[pos] = 20 -- Need to randomize this
         end
         table.insert(P.field, line)
         table.insert(P.visTime, LINE.new(1e99,true,W))
@@ -564,7 +542,6 @@ function turnBased(timeControls) return {
 
         initRNG(P)
         initSpeculativeNext(P)
-        initSpeculativeAtk(P)
 
         initTargeting(P)
         initPuyoGarbage(P)
