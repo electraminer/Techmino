@@ -264,15 +264,7 @@ local function initRNG(P)
     P.seqRND = love.math.newRandomGenerator(seed)
     P.holeRND = love.math.newRandomGenerator(seed)
 
-    -- Replace the existing next queue with a new one.
-    -- Previously, we generated 10 pieces, so generate 4 more to round out the bag.
-    for _=1,4 do
-        P:newNext()
-    end
-    -- Now create a new bag. Everyone will get the same non-bag first piece.
-    -- P.nextQueue = {P.nextQueue[1]}
-    -- Piece is gray to indicate it's not part of the bag.
-    P.nextQueue[1].color = 20
+    P.nextQueue = {}
     for _=1,7 do
         P:newNext()
     end
