@@ -327,6 +327,7 @@ SKIN.load{
     {name="textbone_mrz",          path='media/image/skin/textbone_mrz.png'},
     {name="coloredbone_mrz",       path='media/image/skin/coloredbone_mrz.png'},
     {name="wtf",                   path='media/image/skin/wtf_mrz.png'},
+    {name="puyo",                  path='media/image/skin/puyo.png'},
 }
 
 -- Initialize sound libs
