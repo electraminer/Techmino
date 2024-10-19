@@ -422,7 +422,7 @@ function initPuyoGarbage(P)
         -- Rather than a single hole in the line, Puyo garbage would be determined based on which columns are used.
         local order = {}
         for i=1,P.gameEnv.fieldW do
-            local index = self.holeRND.random(i)
+            local index = self.holeRND:random(i)
             table.insert(order, index, i)
         end
         receive(self, atker, send, time, order)
