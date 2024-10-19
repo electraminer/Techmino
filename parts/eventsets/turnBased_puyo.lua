@@ -314,7 +314,6 @@ function commit(P)
         return
     end
     P:commitNewNext()
-    P:commitGarbageRise()
     -- Clear savestates
     P.modeData.savestates = {}
     saveState(P)
