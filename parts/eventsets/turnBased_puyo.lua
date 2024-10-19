@@ -575,14 +575,22 @@ function turnBased(timeControls) return {
                 end
                 tickChessTimer(P)
             end
+
+            -- Make garbage total not shake
+            P.atkBufferSum1 = P.atkBufferSum
+
+
             coroutine.yield()
         end
     end,
-
     hook_drop = function(P)
         -- Count down garbage one turn at a time
-        if P.atkBuffer[1] then
-            P.atkBuffer[1].countdown = P.atkBuffer[1].countdown - 1
+        for i=1,#P.atkBuffer do
+            if P.atkBuffer[i].countdown > 0 then
+                P.atkBuffer[i].countdown = P.atkBuffer[i].countdown - 1
+                break
+            end
+
         end
 
         -- End turn

@@ -105,5 +105,11 @@ return {
 
             end
         end
+
+        while true do
+            
+            -- Make garbage total not shake
+            P.atkBufferSum1 = P.atkBufferSum
+        end
     end,
 }
