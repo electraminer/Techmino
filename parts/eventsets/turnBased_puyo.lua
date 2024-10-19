@@ -491,7 +491,7 @@ function initPuyoGarbage(P)
         -- Insert a partially filled line
         local line = LINE.new(0,true,W)
         for i=1,W do
-            if order[i] <= totalRecv % W then
+            if order and order[i] <= totalRecv % W then
                 line[i] = 20
             end
         end
