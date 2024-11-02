@@ -2838,7 +2838,7 @@ local function _updateMisc(P,dt)
 
     -- Move camera
     if P.gameEnv.highCam then
-        if P.chaining or not P.alive then
+        if P.chaining or P.waiting > 60 or not P.control or not P.alive then
             y=0
         else
             local W = P.gameEnv.fieldW
