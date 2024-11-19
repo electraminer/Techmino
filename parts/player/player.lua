@@ -1964,6 +1964,7 @@ do
         piece.pc,piece.hpc=false,false
         piece.special=false
         piece.b2b=self.b2b
+        piece.row,piece.dig=0,0
         if cc>0 then-- If lines cleared,about 200 lines of codes below
             cmb=cmb+1
             if dospin then
