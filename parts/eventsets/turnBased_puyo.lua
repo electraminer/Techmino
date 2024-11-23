@@ -913,8 +913,8 @@ function turnBased(timeControls) return {
 } end
 
 return turnBased({
-    mainTime = 60 * 60 * 10,
-    turnTime = 60 * 15,
+    mainTime = 60 * 60 * 15,
+    turnTime = 60 * 30,
     periodTime = 60 * 15,
     increment = true,
     periods = 5,
