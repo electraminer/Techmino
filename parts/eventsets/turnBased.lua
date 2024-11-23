@@ -383,7 +383,7 @@ function initTurnTimer(P)
         P.modeData.turnTime = P.gameEnv.timeControls.periodTime
     else
         -- Check increment and use main time
-        if USE_INCREMENT then
+        if P.gameEnv.timeControls.increment then
             P.modeData.mainTime = P.modeData.mainTime + P.modeData.turnTime
         end
         P.modeData.turnTime = P.gameEnv.timeControls.turnTime
@@ -716,6 +716,7 @@ function turnBased(timeControls) return {
             end
             GC.mStr(string, 62, 260 + 24 * i)
         end
+        GC.setColor(COLOR.white)
         GC.mStr("PC: "..math.min(8+P.stat.pc*2, 16), 62, 260 + 24 * (#COMBO_TABLE + 1))
 
 		-- Display time remaining
@@ -735,6 +736,7 @@ function turnBased(timeControls) return {
                 drawDial(539, 545, P.modeData.turnTime, P.modeData.turnTime / P.gameEnv.timeControls.turnTime)
             end
         end
+        GC.setColor(COLOR.white)
 
         if not P.control then
             return
