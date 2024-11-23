@@ -198,9 +198,10 @@ local COMBO_TABLE = {0, 1, 1, 2, 3, 4, 3, 2}
 
 function initTargeting(P)
     -- Override attacks to choose a deterministic target and save it
+    local prevAttack = P.attack
     function P:attack(target, send, time, line)
         local target = getTarget(P)
-        self:extraEvent('attack', target, send, time, line)
+        prevAttack(self, target, send, time, line)
         P.modeData.lastTarget = target
     end
 end
@@ -382,7 +383,7 @@ function initTurnTimer(P)
         P.modeData.turnTime = P.gameEnv.timeControls.periodTime
     else
         -- Check increment and use main time
-        if USE_INCREMENT then
+        if P.gameEnv.timeControls.increment then
             P.modeData.mainTime = P.modeData.mainTime + P.modeData.turnTime
         end
         P.modeData.turnTime = P.gameEnv.timeControls.turnTime
@@ -715,6 +716,7 @@ function turnBased(timeControls) return {
             end
             GC.mStr(string, 62, 260 + 24 * i)
         end
+        GC.setColor(COLOR.white)
         GC.mStr("PC: "..math.min(8+P.stat.pc*2, 16), 62, 260 + 24 * (#COMBO_TABLE + 1))
 
 		-- Display time remaining
@@ -734,6 +736,7 @@ function turnBased(timeControls) return {
                 drawDial(539, 545, P.modeData.turnTime, P.modeData.turnTime / P.gameEnv.timeControls.turnTime)
             end
         end
+        GC.setColor(COLOR.white)
 
         if not P.control then
             return
