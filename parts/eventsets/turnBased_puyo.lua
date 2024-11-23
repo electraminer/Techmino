@@ -355,7 +355,7 @@ function initTurnTimer(P)
         P.modeData.turnTime = P.gameEnv.timeControls.periodTime
     else
         -- Check increment and use main time
-        if USE_INCREMENT then
+        if P.gameEnv.timeControls.increment then
             P.modeData.mainTime = P.modeData.mainTime + P.modeData.turnTime
         end
         P.modeData.turnTime = P.gameEnv.timeControls.turnTime

@@ -382,7 +382,7 @@ function initTurnTimer(P)
         P.modeData.turnTime = P.gameEnv.timeControls.periodTime
     else
         -- Check increment and use main time
-        if USE_INCREMENT then
+        if P.gameEnv.timeControls.useIncrement then
             P.modeData.mainTime = P.modeData.mainTime + P.modeData.turnTime
         end
         P.modeData.turnTime = P.gameEnv.timeControls.turnTime
@@ -844,8 +844,8 @@ function turnBased(timeControls) return {
 } end
 
 return turnBased({
-    mainTime = 60 * 60 * 10,
-    turnTime = 60 * 15,
+    mainTime = 60 * 60 * 15,
+    turnTime = 60 * 30,
     periodTime = 60 * 15,
     increment = true,
     periods = 5,
