@@ -749,7 +749,7 @@ function turnBased(timeControls) return {
         end
 
         -- Display cancel charge table
-        local cc = P.modeData.cancelCharge+10
+        local cc = P.modeData.cancelCharge
         local font = cc >= 10 and 15 or 30
         setFont(font)
         
