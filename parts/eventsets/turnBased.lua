@@ -749,9 +749,18 @@ function turnBased(timeControls) return {
         end
 
         -- Display cancel charge table
-        setFont(24)
-        GC.setColor(COLOR.white)
-        GC.mStr("CC: "..P.modeData.cancelCharge, 62, 260 + 24)
+        local cc = P.modeData.cancelCharge+10
+        local font = cc >= 10 and 15 or 30
+        setFont(font)
+        
+        -- Calculate
+        local totalBuffer = 0
+        for i=1,#P.atkBuffer do
+            totalBuffer = totalBuffer + P.atkBuffer[i].amount
+        end
+        GC.setColor(cc<totalBuffer and COLOR.Z or COLOR.lB)
+        GC.rectangle('fill',470,600-cc*30,7,cc*30,2)
+        GC.mStr(cc,477,600-cc*30-5-font)
 
 		-- Display time remaining
         setFont(30)
