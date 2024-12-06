@@ -651,6 +651,8 @@ C. Gamepad
             a18="Right Drop",
             a19="Left Zangi",
             a20="Right Zangi",
+            a21="Function 3",
+            a22="Function 4",
             restart="Retry",
         },
         setting_skin={

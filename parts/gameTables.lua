@@ -726,6 +726,8 @@ do-- Userdata tables
         {ava=false, x=1090,    y=50,     r=30},-- dropRight
         {ava=false, x=1150,    y=50,     r=30},-- zangiLeft
         {ava=false, x=1210,    y=50,     r=30},-- zangiRight
+        {ava=true,  x=80,      y=280,    r=80},-- func3
+        {ava=true,  x=1280-80, y=280,    r=80},-- func4
     }
     RANKS={sprint_10l=0}-- Ranks of modes
     STAT={

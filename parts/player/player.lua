@@ -399,6 +399,14 @@ function Player:act_func2()
     if not self.control then return end
     self.gameEnv.fkey2(self)
 end
+function Player:act_func3()
+    if not self.control then return end
+    self.gameEnv.fkey3(self)
+end
+function Player:act_func4()
+    if not self.control then return end
+    self.gameEnv.fkey4(self)
+end
 
 function Player:act_insLeft(auto)
     if not self.control then return end
@@ -562,6 +570,8 @@ local playerActions={
     Player.act_dropRight, -- 18
     Player.act_zangiLeft, -- 19
     Player.act_zangiRight,-- 20
+    Player.act_func3,     -- 21
+    Player.act_func4,     -- 22
 }function Player:pressKey(keyID)
     if self.id==1 then
         if GAME.recording then
@@ -2126,50 +2136,55 @@ do
             end
 
             piece.row,piece.dig=cc,gbcc
-            self.atk = atk
+            self.atk = {atk}
             self:_triggerEvent('hook_atk_calculation')
             atk = self.atk
 
+            totalAtk = 0
             -- Send Lines
-            atk=floor(atk*(1+self.strength*.25))-- Badge Buff
-            send=atk
-            if exblock>0 then
-                exblock=floor(exblock*(1+self.strength*.25))-- Badge Buff
-                self:showText("+"..exblock,0,53,20,'fly')
-                off=off+self:cancel(exblock)
-            end
-            if send>=1 then
-                self:showText(send,0,80,35,'zoomout')
-                _=self:cancel(send)
-                send=send-_
-                off=off+_
-                if send>0 then
-                    local T
-                    if ENV.layout=='royale' then
-                        if self.atkMode==4 then
-                            local M=#self.atker
-                            if M>0 then
-                                for i=1,M do
-                                    self:attack(self.atker[i],send,sendTime,generateLine(self.atkRND:random(10)))
+            for i=1,#atk do
+                send=atk[i]
+                totalAtk = totalAtk + send
+                send=floor(send*(1+self.strength*.25))-- Badge Buff
+                if exblock>0 then
+                    exblock=floor(exblock*(1+self.strength*.25))-- Badge Buff
+                    self:showText("+"..exblock,0,53,20,'fly')
+                    off=off+self:cancel(exblock)
+                end
+                if send>=1 then
+                    self:showText(send,0,80,35,'zoomout')
+                    _=self:cancel(send)
+                    send=send-_
+                    off=off+_
+                    if send>0 then
+                        local T
+                        if ENV.layout=='royale' then
+                            if self.atkMode==4 then
+                                local M=#self.atker
+                                if M>0 then
+                                    for i=1,M do
+                                        self:attack(self.atker[i],send,sendTime,generateLine(self.atkRND:random(10)))
+                                    end
+                                else
+                                    T=randomTarget(self)
                                 end
                             else
-                                T=randomTarget(self)
+                                T=self.atking
+                                self:freshTarget()
                             end
-                        else
-                            T=self.atking
-                            self:freshTarget()
+                        elseif #PLY_ALIVE>1 then
+                            T=randomTarget(self)
                         end
-                    elseif #PLY_ALIVE>1 then
-                        T=randomTarget(self)
+                        if T then
+                            self:attack(T,send,sendTime,generateLine(self.atkRND:random(10)))
+                        end
                     end
-                    if T then
-                        self:attack(T,send,sendTime,generateLine(self.atkRND:random(10)))
+                    if self.sound and send>3 then
+                        SFX.play('emit',min(send,7)*.1)
                     end
-                end
-                if self.sound and send>3 then
-                    SFX.play('emit',min(send,7)*.1)
                 end
             end
+            atk = totalAtk
 
             -- SFX & Vibrate
             if self.sound then

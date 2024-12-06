@@ -316,7 +316,7 @@ local function _applyGameEnv(P)-- Finish gameEnv processing
 
     P.life=ENV.life
 
-    P.keyAvailable=TABLE.new(true,20)
+    P.keyAvailable=TABLE.new(true,22)
     if ENV.noTele then
         for i=11,20 do
             if i~=14 then
@@ -326,6 +326,8 @@ local function _applyGameEnv(P)-- Finish gameEnv processing
     end
     if not ENV.fkey1 then P.keyAvailable[9]=false end
     if not ENV.fkey2 then P.keyAvailable[10]=false end
+    if not ENV.fkey3 then P.keyAvailable[21]=false end
+    if not ENV.fkey4 then P.keyAvailable[22]=false end
     for _,v in next,ENV.keyCancel do
         P.keyAvailable[v]=false
     end

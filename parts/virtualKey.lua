@@ -100,6 +100,8 @@ local virtualkeySet={
         {id=18, x=1090, y=50,   r=30},-- dropRight
         {id=19, x=1150, y=50,   r=30},-- zangiLeft
         {id=20, x=1210, y=50,   r=30},-- zangiRight
+        {id=21,  x=70,   y=50,   r=30},-- func3
+        {id=22, x=130,  y=50,   r=30},-- func4
     },-- PC key feedback(top&in a row)
 }
 for _,set in next,virtualkeySet do

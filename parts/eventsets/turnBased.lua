@@ -112,7 +112,7 @@ local function savestateCtx(P)
         'spikeTime', 'spike', 'spikeText',
         'life', 'result',
         'lastPiece',
-    }, {'speculativeAtk', 'combo', 'checkmate'}}
+    }, {'speculativeAtk', 'combo', 'checkmate', 'cancelCharge'}}
     local blacklist = {false, false}
     return saved, whitelist, blacklist
 end
@@ -123,8 +123,10 @@ function saveState(P)
     table.insert(P.modeData.savestates, {
         state = state,
         atkTarget = P.modeData.lastTarget,
+        atkTargetHitCount = P.modeData.lastTargetHitCount,
     })
     P.modeData.lastTarget = 0
+    P.modeData.lastTargetHitCount = 0
 end
 
 function loadState(P)
@@ -203,7 +205,20 @@ function initTargeting(P)
         local target = getTarget(P)
         prevAttack(self, target, send, time, line)
         P.modeData.lastTarget = target
+        P.modeData.lastTargetHitCount = P.modeData.lastTargetHitCount + 1
     end
+end
+
+function initCancelMeter(P)
+    -- Override garbage cancelling - you can no longer cancel garbage, but you'll be able to use the cancel meter
+    local prevCancel = P.cancel
+
+    function P:cancel()
+        -- Do not cancel garbage normally at all
+        return 0
+    end
+
+    P.modeData.cancelCharge = 0
 end
 
 function startTurn(P)
@@ -226,8 +241,10 @@ function undo(P)
     local savestate = nil
     if #P.modeData.savestates >= 2 then
         local savestate = P.modeData.savestates[#P.modeData.savestates]
-        if savestate.atkTarget ~= 0 then
-            P:extraEvent('undoAtk', savestate.atkTarget)
+        if savestate.atkTargetHitCount ~= 0 then
+            for i=1,savestate.atkTargetHitCount do
+                P:extraEvent('undoAtk', savestate.atkTarget)
+            end
         end
         P.modeData.savestates[#P.modeData.savestates] = nil
     end
@@ -448,6 +465,8 @@ function turnBased(timeControls) return {
         initSpeculativeAtk(P)
 
         initTargeting(P)
+
+        initCancelMeter(P)
         
         P.modeData.savestates = {}
         saveState(P)
@@ -526,32 +545,44 @@ function turnBased(timeControls) return {
     hook_atk_calculation = function(P)
         if P.lastPiece.row > 0 then
             -- Line clear bonus
-            local ATTACK_TABLE = {0, 1, 2, 4}
+            local CANCEL_TABLE = {0, 1, 2, 4}
+            local cancelCharge = CANCEL_TABLE[P.lastPiece.row]
+            local ATTACK_TABLE = {{}, {1}, {2}, {2,2}}
             P.atk = ATTACK_TABLE[P.lastPiece.row]
             -- Combo
             if P.combo > 0 then
-                P.atk = P.atk + COMBO_TABLE[math.min(P.combo, #COMBO_TABLE)]
+                -- For now, simple combo only adds 1 to attack
+                table.insert(P.atk, 1)
             end
             -- Spin (overrides combo)
             if P.lastPiece.spin and not P.lastPiece.mini then
-                P.atk = 2 * P.lastPiece.row
+                -- Only 1 hole per spin to reduce overall damage
+                P.atk = {}
+                for i=1,P.lastPiece.row do
+                    table.insert(P.atk, 1)
+                end
+                cancelCharge = 0
             end
             -- Back to back
             if P.lastPiece.special then
                 if P.lastPiece.b2b > 800 then
-                    P.atk = P.atk + 2
+                    table.insert(P.atk, 1)
+                    table.insert(P.atk, 1)
                 elseif P.lastPiece.b2b >= 50 then
-                    P.atk = P.atk + 1
+                    table.insert(P.atk, 1)
                 end
             end
-            -- Half perfect clear
-            if P.lastPiece.hpc then
-                P.atk = P.atk + 4
-            end
-            -- Perfect clear (overrides everything)
+            -- PC/HPC
             if P.lastPiece.pc then
-                P.atk = math.min(8+(P.stat.pc-1)*2, 16)
+                -- For now, send +4
+                table.insert(P.atk, 2)
+                table.insert(P.atk, 2)
+            elseif P.lastPiece.hpc then
+                -- For now, send +2
+                table.insert(P.atk, 2)
             end
+
+            P.modeData.cancelCharge = P.modeData.cancelCharge + cancelCharge
         end
     end,
     
@@ -561,6 +592,21 @@ function turnBased(timeControls) return {
 
     fkey2 = function(P)
         undo(P)
+    end,
+
+    fkey3 = function(P)
+        -- Calculate
+        local totalBuffer = 0
+        for i=1,#P.atkBuffer do
+            totalBuffer = totalBuffer + P.atkBuffer[i].amount
+        end
+
+        -- Use cancel charge
+        if P.modeData.cancelCharge >= totalBuffer then
+            P.modeData.cancelCharge = 0
+            P.atkBuffer = {}
+            P.atkBufferSum = 0
+        end
     end,
 
     extraEvent = {
@@ -702,22 +748,10 @@ function turnBased(timeControls) return {
             GC.pop()
         end
 
-        -- Display combo table
+        -- Display cancel charge table
         setFont(24)
-        GC.mStr("Combo", 62, 260)
-        for i,bonus in ipairs(COMBO_TABLE) do
-            local string = bonus;
-            GC.setColor(COLOR.white);
-            if P.combo == i then
-                local animationCycle = (P.stat.frame % 60) / 60
-                animationCycle = math.abs(animationCycle-0.5)*2
-                string = "> " .. bonus .. " <"
-                GC.setColor(1, animationCycle, animationCycle);
-            end
-            GC.mStr(string, 62, 260 + 24 * i)
-        end
         GC.setColor(COLOR.white)
-        GC.mStr("PC: "..math.min(8+P.stat.pc*2, 16), 62, 260 + 24 * (#COMBO_TABLE + 1))
+        GC.mStr("CC: "..P.modeData.cancelCharge, 62, 260 + 24)
 
 		-- Display time remaining
         setFont(30)

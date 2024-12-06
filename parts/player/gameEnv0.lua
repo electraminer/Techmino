@@ -55,7 +55,7 @@ return {
     fillClear=true,
 
     layout='normal',
-    fkey1=false,fkey2=false,
+    fkey1=false,fkey2=false,fkey3=false,fkey4=false,
     keyCancel={},
     fine=false,fineKill=false,
     b2bKill=false,

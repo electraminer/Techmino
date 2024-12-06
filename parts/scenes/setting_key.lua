@@ -86,7 +86,7 @@ local keyNames={
 }setmetatable(keyNames.apple,{__index=keyNames.normal})
 
 local function _freshKeyList()
-    keyList={} for i=0,20 do keyList[i]={} end
+    keyList={} for i=0,22 do keyList[i]={} end
 
     local keynames=SYSTEM:find'OS' and keyNames.apple or keyNames.normal
     for k,v in next,KEY_MAP.keyboard do
@@ -132,6 +132,7 @@ function scene.keyDown(key,isRep)
     elseif selected then
         if not forbbidenKeys[key] then
             KEY_MAP.keyboard[key]=selected
+            MES.new('', TABLE.dump(KEY_MAP))
             _freshKeyList()
             selected=false
             SFX.play('reach',.5)
@@ -169,16 +170,16 @@ function scene.draw()
     gc.setColor(COLOR.Z)
     gc.printf(text.keySettingInstruction,526,620,500,'right')
 
-    for i=0,20 do
+    for i=0,22 do
         for j=1,#keyList[i] do
             local key=keyList[i][j]
             local font=#key[2]<=4 and 35 or #key[2]<=7 and 25 or 15
             setFont(font)
             mStr(key,
-                (i>10 and 820 or 200)+80*j,
+                (i>12 and 820 or 200)+80*j,
                 (
-                    i>10 and 60*(i-10)-23 or
-                    i>0 and 60*i-23 or
+                    i>12 and 50*(i-12) or
+                    i>0 and 50*i or
                     667
                 )-font*.7
             )
@@ -189,9 +190,9 @@ function scene.draw()
         gc.setLineWidth(3)
         gc.setColor(TIME()%.26<.13 and COLOR.F or COLOR.Y)
         gc.rectangle('line',
-            selected>10 and 860 or 240,
-            selected>10 and 60*(selected-10)-50 or selected>0 and 60*selected-50 or 640,
-            400,60
+            selected>12 and 860 or 240,
+            selected>12 and 50*(selected-12)-25 or selected>0 and 50*selected-25 or 640,
+            400,50
         )
     end
 end
@@ -206,29 +207,31 @@ local function _setSel(i)
     end
 end
 scene.widgetList={
-    WIDGET.newKey{name='a1',x=150,y=40, w=180,h=60,font=25,code=function() _setSel(1) end},
-    WIDGET.newKey{name='a2',x=150,y=100,w=180,h=60,font=25,code=function() _setSel(2) end},
-    WIDGET.newKey{name='a3',x=150,y=160,w=180,h=60,font=25,code=function() _setSel(3) end},
-    WIDGET.newKey{name='a4',x=150,y=220,w=180,h=60,font=25,code=function() _setSel(4) end},
-    WIDGET.newKey{name='a5',x=150,y=280,w=180,h=60,font=25,code=function() _setSel(5) end},
-    WIDGET.newKey{name='a6',x=150,y=340,w=180,h=60,font=25,code=function() _setSel(6) end},
-    WIDGET.newKey{name='a7',x=150,y=400,w=180,h=60,font=25,code=function() _setSel(7) end},
-    WIDGET.newKey{name='a8',x=150,y=460,w=180,h=60,font=25,code=function() _setSel(8) end},
-    WIDGET.newKey{name='a9',x=150,y=520,w=180,h=60,font=25,code=function() _setSel(9) end},
-    WIDGET.newKey{name='a10',x=150,y=580,w=180,h=60,font=25,code=function() _setSel(10) end},
+    WIDGET.newKey{name='a1',x=150,y=50, w=180,h=50,font=25,code=function() _setSel(1) end},
+    WIDGET.newKey{name='a2',x=150,y=100,w=180,h=50,font=25,code=function() _setSel(2) end},
+    WIDGET.newKey{name='a3',x=150,y=150,w=180,h=50,font=25,code=function() _setSel(3) end},
+    WIDGET.newKey{name='a4',x=150,y=200,w=180,h=50,font=25,code=function() _setSel(4) end},
+    WIDGET.newKey{name='a5',x=150,y=250,w=180,h=50,font=25,code=function() _setSel(5) end},
+    WIDGET.newKey{name='a6',x=150,y=300,w=180,h=50,font=25,code=function() _setSel(6) end},
+    WIDGET.newKey{name='a7',x=150,y=350,w=180,h=50,font=25,code=function() _setSel(7) end},
+    WIDGET.newKey{name='a8',x=150,y=400,w=180,h=50,font=25,code=function() _setSel(8) end},
+    WIDGET.newKey{name='a9',x=150,y=450,w=180,h=50,font=25,code=function() _setSel(9) end},
+    WIDGET.newKey{name='a10',x=150,y=500,w=180,h=50,font=25,code=function() _setSel(10) end},
+    WIDGET.newKey{name='a11',x=150,y=550,w=180,h=50,font=25,code=function() _setSel(11) end},
+    WIDGET.newKey{name='a12',x=150,y=600,w=180,h=50,font=25,code=function() _setSel(12) end},
+    
+    WIDGET.newKey{name='a13',x=770,y=50,w=180,h=50,font=25,code=function() _setSel(13) end},
+    WIDGET.newKey{name='a14',x=770,y=100,w=180,h=50,font=25,code=function() _setSel(14) end},
+    WIDGET.newKey{name='a15',x=770,y=150,w=180,h=50,font=25,code=function() _setSel(15) end},
+    WIDGET.newKey{name='a16',x=770,y=200,w=180,h=50,font=25,code=function() _setSel(16) end},
+    WIDGET.newKey{name='a17',x=770,y=250,w=180,h=50,font=25,code=function() _setSel(17) end},
+    WIDGET.newKey{name='a18',x=770,y=300,w=180,h=50,font=25,code=function() _setSel(18) end},
+    WIDGET.newKey{name='a19',x=770,y=350,w=180,h=50,font=25,code=function() _setSel(19) end},
+    WIDGET.newKey{name='a20',x=770,y=400,w=180,h=50,font=25,code=function() _setSel(20) end},
+    WIDGET.newKey{name='a21',x=770,y=450,w=180,h=50,font=25,code=function() _setSel(21) end},
+    WIDGET.newKey{name='a22',x=770,y=500,w=180,h=50,font=25,code=function() _setSel(22) end},
 
-    WIDGET.newKey{name='a11',x=770,y=40, w=180,h=60,font=25,code=function() _setSel(11) end},
-    WIDGET.newKey{name='a12',x=770,y=100,w=180,h=60,font=25,code=function() _setSel(12) end},
-    WIDGET.newKey{name='a13',x=770,y=160,w=180,h=60,font=25,code=function() _setSel(13) end},
-    WIDGET.newKey{name='a14',x=770,y=220,w=180,h=60,font=25,code=function() _setSel(14) end},
-    WIDGET.newKey{name='a15',x=770,y=280,w=180,h=60,font=25,code=function() _setSel(15) end},
-    WIDGET.newKey{name='a16',x=770,y=340,w=180,h=60,font=25,code=function() _setSel(16) end},
-    WIDGET.newKey{name='a17',x=770,y=400,w=180,h=60,font=25,code=function() _setSel(17) end},
-    WIDGET.newKey{name='a18',x=770,y=460,w=180,h=60,font=25,code=function() _setSel(18) end},
-    WIDGET.newKey{name='a19',x=770,y=520,w=180,h=60,font=25,code=function() _setSel(19) end},
-    WIDGET.newKey{name='a20',x=770,y=580,w=180,h=60,font=25,code=function() _setSel(20) end},
-
-    WIDGET.newKey{name='restart',x=150,y=670,w=180,h=60,code=function() _setSel(0) end},
+    WIDGET.newKey{name='restart',x=150,y=670,w=180,h=50,code=function() _setSel(0) end},
 
     WIDGET.newButton{name='back',x=1140,y=640,w=170,h=80,sound='back',font=60,fText=CHAR.icon.back,code=backScene},
 }
