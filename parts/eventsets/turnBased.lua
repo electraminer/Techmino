@@ -120,6 +120,7 @@ end
 function saveState(P)
     local ctx, whitelists, blacklists = savestateCtx(P)
     local state = deepCopy(ctx, {}, whitelists, blacklists)
+    print(P.sid.." Saved state "..P.modeData.lastTargetHitCount)
     table.insert(P.modeData.savestates, {
         state = state,
         atkTarget = P.modeData.lastTarget,
@@ -206,6 +207,7 @@ function initTargeting(P)
         prevAttack(self, target, send, time, line)
         P.modeData.lastTarget = target
         P.modeData.lastTargetHitCount = P.modeData.lastTargetHitCount + 1
+        print(P.sid.." Sent attack "..P.modeData.lastTargetHitCount)
     end
 end
 
@@ -242,6 +244,7 @@ function undo(P)
     if #P.modeData.savestates >= 2 then
         local savestate = P.modeData.savestates[#P.modeData.savestates]
         if savestate.atkTargetHitCount ~= 0 then
+            print(P.sid.."Undoing attacks x"..savestate.atkTargetHitCount)
             for i=1,savestate.atkTargetHitCount do
                 P:extraEvent('undoAtk', savestate.atkTarget)
             end
@@ -256,6 +259,7 @@ end
 local function undoAtk(P)
     local atk = table.remove(P.atkBuffer, #P.atkBuffer)
     P.atkBufferSum = P.atkBufferSum - atk.amount
+    print(P.sid.." Undo atk"..atk.amount)
 end
 
 -- Generate a unique RNG queue for each player

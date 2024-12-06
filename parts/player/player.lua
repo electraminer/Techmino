@@ -941,6 +941,7 @@ function Player:attack(target,send,time,line)
     self:extraEvent('attack',target,send,time,line,self.inTransitAttacks[target].seenAttacks)
 end
 function Player:beAttacked(source,target_sid,send,time,line,seenCount)
+    print(self.sid.." be attacked "..send)
     -- Only recieve the attack if you are the target.
     if self==source or self.sid~=target_sid then return end
 
