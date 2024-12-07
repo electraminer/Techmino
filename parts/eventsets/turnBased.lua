@@ -532,6 +532,7 @@ function turnBased(timeControls) return {
     end,
 
     hook_drop = function(P)
+        P.b2b = P.modeData.b2bCharge
         -- End turn
         local turnPieces = P.stat.piece - P.modeData.startedTurnAtPiece
         P.cur = nil
@@ -588,12 +589,17 @@ function turnBased(timeControls) return {
             if P.lastPiece.spin and not P.lastPiece.mini then
                 -- Only 1 hole per spin to reduce overall damage
                 P.atk = {}
+                P.sendTimes = {}
                 for i=1,P.lastPiece.row do
                     table.insert(P.atk, 1)
                     table.insert(P.sendTimes, 0)
                 end
                 cancelCharge = 0
                 b2bCharge = 100 * P.lastPiece.row
+            end
+            if P.lastPiece.mini then
+                -- Minis prevent b2b loss
+                b2bCharge = 0
             end
             -- Back to back
             if P.lastPiece.special then
