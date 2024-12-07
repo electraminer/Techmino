@@ -112,7 +112,7 @@ local function savestateCtx(P)
         'spikeTime', 'spike', 'spikeText',
         'life', 'result',
         'lastPiece',
-    }, {'speculativeAtk', 'combo', 'checkmate', 'cancelCharge'}}
+    }, {'speculativeAtk', 'combo', 'checkmate', 'cancelCharge', 'b2bCharge'}}
     local blacklist = {false, false}
     return saved, whitelist, blacklist
 end
