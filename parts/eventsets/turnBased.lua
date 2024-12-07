@@ -584,6 +584,7 @@ function turnBased(timeControls) return {
                 -- For now, simple combo only adds 1 to attack
                 table.insert(P.atk, 1)
                 table.insert(P.sendTimes, 703)
+                cancelCharge = cancelCharge + 1
             end
             -- Spin (overrides combo)
             if P.lastPiece.spin and not P.lastPiece.mini then
@@ -811,7 +812,9 @@ function turnBased(timeControls) return {
         GC.rectangle('fill',470,600-cc*30,7,cc*30,2)
         GC.mStr(cc,477,600-cc*30-5-font)
 
+
 		-- Display time remaining
+        GC.setColor(COLOR.Z)
         setFont(30)
         if P.modeData.turnTime < 1e98 then
             if P.modeData.period > P.gameEnv.timeControls.periods then
