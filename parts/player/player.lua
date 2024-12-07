@@ -2138,13 +2138,16 @@ do
 
             piece.row,piece.dig=cc,gbcc
             self.atk = {atk}
+            self.sendTimes = {sendTime}
             self:_triggerEvent('hook_atk_calculation')
             atk = self.atk
+            sendTimes = self.sendTimes
 
             totalAtk = 0
             -- Send Lines
             for i=1,#atk do
                 send=atk[i]
+                sendTime=sendTimes[i] or sendTimes[1]
                 totalAtk = totalAtk + send
                 send=floor(send*(1+self.strength*.25))-- Badge Buff
                 if exblock>0 then

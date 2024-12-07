@@ -259,7 +259,7 @@ end
 local function undoAtk(P)
     local atk = table.remove(P.atkBuffer, #P.atkBuffer)
     P.atkBufferSum = P.atkBufferSum - atk.amount
-    print(P.sid.." Undo atk"..atk.amount)
+    print(P.sid.." Undo atk "..atk.amount)
 end
 
 -- Generate a unique RNG queue for each player
@@ -379,7 +379,7 @@ end
 function initSpeedSettings(P)
     P.gameEnv.drop = 1e99
     P.gameEnv.lock = 1e99
-    P.gameEnv.garbageSpeed = 1e99
+    P.gameEnv.garbageSpeed = 0
     P.gameEnv.pushSpeed = 1e99
     P.gameEnv.infHold = true
     P.gameEnv.freshLimit = 1e99
@@ -471,6 +471,8 @@ function turnBased(timeControls) return {
         initTargeting(P)
 
         initCancelMeter(P)
+
+        P.modeData.b2bCharge = 0
         
         P.modeData.savestates = {}
         saveState(P)
@@ -500,6 +502,21 @@ function turnBased(timeControls) return {
         end
         while true do
             if P.control then
+                -- Combine adjacent combo garbage
+                for i=1,#P.atkBuffer do
+                    local atk = P.atkBuffer[i]
+                    local nextAtk = P.atkBuffer[i+1]
+                    if atk.countdown == 703 then
+                        atk.countdown = 0
+                        if nextAtk and nextAtk.countdown == 703 then
+                            -- Merge
+                            atk.amount = 2
+                            nextAtk.amount = 0
+                            nextAtk.countdown = 0
+                        end
+                    end
+                end
+
                 if P.waiting > 1e98 then
                     -- Auto pass turn if waiting at the end of your turn
                     tryAutoCommit(P)
@@ -553,10 +570,19 @@ function turnBased(timeControls) return {
             local cancelCharge = CANCEL_TABLE[P.lastPiece.row]
             local ATTACK_TABLE = {{}, {1}, {2}, {2,2}}
             P.atk = ATTACK_TABLE[P.lastPiece.row]
+            P.sendTimes = {}
+            for i=1,#P.atk do
+                table.insert(P.sendTimes, 0)
+            end
+            local b2bCharge = -200
+            if P.lastPiece.row == 4 then
+                b2bCharge = 200
+            end
             -- Combo
             if P.combo > 0 then
                 -- For now, simple combo only adds 1 to attack
                 table.insert(P.atk, 1)
+                table.insert(P.sendTimes, 703)
             end
             -- Spin (overrides combo)
             if P.lastPiece.spin and not P.lastPiece.mini then
@@ -564,29 +590,42 @@ function turnBased(timeControls) return {
                 P.atk = {}
                 for i=1,P.lastPiece.row do
                     table.insert(P.atk, 1)
+                    table.insert(P.sendTimes, 0)
                 end
                 cancelCharge = 0
+                b2bCharge = 100 * P.lastPiece.row
             end
             -- Back to back
             if P.lastPiece.special then
                 if P.lastPiece.b2b > 800 then
                     table.insert(P.atk, 1)
+                    table.insert(P.sendTimes, 0)
                     table.insert(P.atk, 1)
+                    table.insert(P.sendTimes, 0)
                 elseif P.lastPiece.b2b >= 50 then
                     table.insert(P.atk, 1)
+                    table.insert(P.sendTimes, 0)
                 end
             end
             -- PC/HPC
             if P.lastPiece.pc then
-                -- For now, send +4
-                table.insert(P.atk, 2)
-                table.insert(P.atk, 2)
+                -- Temporarily disable PC
+                -- table.insert(P.atk, 2)
+                -- table.insert(P.atk, 2)
             elseif P.lastPiece.hpc then
-                -- For now, send +2
-                table.insert(P.atk, 2)
+                -- Temporarily disable HPC
+                -- table.insert(P.atk, 2)
             end
-
+            -- Update charge
             P.modeData.cancelCharge = P.modeData.cancelCharge + cancelCharge
+            P.modeData.b2bCharge = P.modeData.b2bCharge + b2bCharge
+            if P.modeData.b2bCharge < 0 then
+                P.modeData.b2bCharge = 0
+            end
+            if P.modeData.b2bCharge > 1000 then
+                P.modeData.b2bCharge = 1000
+            end
+            P.b2b = P.modeData.b2bCharge
         end
     end,
     
