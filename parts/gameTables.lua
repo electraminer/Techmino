@@ -334,6 +334,7 @@ MODE_UPDATE_MAP={
 }
 EVENTSETS={
     'X',
+    'white_t_piece',
     'attacker_h','attacker_u',
     'backfire_120','backfire_60','backfire_30','backfire_0',
     'checkAttack_100',

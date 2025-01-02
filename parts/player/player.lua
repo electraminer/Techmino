@@ -2,7 +2,7 @@
 -- Var P in other files represent Player object!--
 -------------------------------------------------
 
-local Player={}-- Player class
+local Player={} -- Player class
 
 local floor,ceil,rnd=math.floor,math.ceil,math.random
 local max,min,abs,modf=math.max,math.min,math.abs,math.modf
@@ -19,16 +19,16 @@ local SETTING=SETTING
 function Player:_showText(text,dx,dy,font,style,spd,stop)
     ins(self.bonus,TEXT.getText(text,150+dx,300+dy,font,style,spd,stop))
 end
-function Player:_createLockFX(x,y,t)-- Not used
+function Player:_createLockFX(x,y,t) -- Not used
     ins(self.lockFX,{x,y,0,t})
 end
-function Player:_createDropFX(x,y,w,h)-- Not used
+function Player:_createDropFX(x,y,w,h) -- Not used
     ins(self.dropFX,{x,y,w,h})
 end
-function Player:_createMoveFX(color,x,y,spd)-- Not used
+function Player:_createMoveFX(color,x,y,spd) -- Not used
     ins(self.moveFX,{color,x,y,0,spd})
 end
-function Player:_createClearingFX(y,spd)-- Not used
+function Player:_createClearingFX(y,spd) -- Not used
     ins(self.clearFX,{y,0,spd})
 end
 function Player:_rotateField(dir)
@@ -40,7 +40,7 @@ function Player:_rotateField(dir)
         end
     end
 end
-function Player:shakeField(strength)-- Range: 1~10
+function Player:shakeField(strength) -- Range: 1~10
     if self.gameEnv.shakeFX then
         self.shakeTimer=max(self.shakeTimer,3*self.gameEnv.shakeFX+floor(4*min(max(strength,1),10)))
     end
@@ -79,7 +79,10 @@ function Player:createLockFX()
             local L=self.clearedRow
             local skip
             for j=1,#L do
-                if L[j]==y then skip=true break end-- goto CONTINUE_skip
+                if L[j]==y then
+                    skip=true
+                    break
+                end                                 -- goto CONTINUE_skip
             end
             if not skip then
                 y=-30*y
@@ -190,8 +193,10 @@ function Player:createBeam(R,send)
             x1=self.x+(30*(self.curX+sc[2])-30+15+150)*self.size
             y1=self.y+(600-30*(self.curY+sc[1])+15+self.fieldUp+self.fieldBeneath)*self.size
         end
-        if R.miniMode then x2,y2=R.centerX,R.centerY
-        else x2,y2=R.x+308*R.size,R.y+450*R.size
+        if R.miniMode then
+            x2,y2=R.centerX,R.centerY
+        else
+            x2,y2=R.x+308*R.size,R.y+450*R.size
         end
 
         local c=BLOCK_COLORS[C.color]
@@ -274,13 +279,13 @@ function Player:act_rotRight()
             -- Ensure IRS is spent before the rotation is processed so it doesn't throw things off.
             -- This is so that if you for instance, are holding left IRS and then rotate right, it doesn't process
             -- the left and right rotates in the reverse order.
-            self.keyPressing[3] = false
+            self.keyPressing[3]=false
             self:resolveIRS()
-            self.keyPressing[3] = true
+            self.keyPressing[3]=true
         end
         self:spin(1)
         self:_triggerEvent('hook_rotate',1)
-        
+
         -- Disable held inputs if IRS is off
         if not self.gameEnv.irs then
             self.keyPressing[3]=false
@@ -295,9 +300,9 @@ function Player:act_rotLeft()
             -- Ensure IRS is spent before the rotation is processed so it doesn't throw things off.
             -- This is so that if you for instance, are holding left IRS and then rotate right, it doesn't process
             -- the left and right rotates in the reverse order.
-            self.keyPressing[4] = false
+            self.keyPressing[4]=false
             self:resolveIRS()
-            self.keyPressing[4] = true
+            self.keyPressing[4]=true
         end
         self:spin(3)
         self:_triggerEvent('hook_rotate',3)
@@ -315,9 +320,9 @@ function Player:act_rot180()
             -- Ensure IRS is spent before the rotation is processed so it doesn't throw things off.
             -- This is so that if you for instance, are holding left IRS and then rotate right, it doesn't process
             -- the left and right rotates in the reverse order.
-            self.keyPressing[5] = false
+            self.keyPressing[5]=false
             self:resolveIRS()
-            self.keyPressing[5] = true
+            self.keyPressing[5]=true
         end
         self:spin(2)
         self:_triggerEvent('hook_rotate',2)
@@ -541,27 +546,28 @@ end
 
 --------------------------<Method>--------------------------
 local playerActions={
-    Player.act_moveLeft,  -- 1
-    Player.act_moveRight, -- 2
-    Player.act_rotRight,  -- 3
-    Player.act_rotLeft,   -- 4
-    Player.act_rot180,    -- 5
-    Player.act_hardDrop,  -- 6
-    Player.act_softDrop,  -- 7
-    Player.act_hold,      -- 8
-    Player.act_func1,     -- 9
-    Player.act_func2,     -- 10
-    Player.act_insLeft,   -- 11
-    Player.act_insRight,  -- 12
-    Player.act_insDown,   -- 13
-    Player.act_down1,     -- 14
-    Player.act_down4,     -- 15
-    Player.act_down10,    -- 16
-    Player.act_dropLeft,  -- 17
-    Player.act_dropRight, -- 18
-    Player.act_zangiLeft, -- 19
-    Player.act_zangiRight,-- 20
-}function Player:pressKey(keyID)
+    Player.act_moveLeft,   -- 1
+    Player.act_moveRight,  -- 2
+    Player.act_rotRight,   -- 3
+    Player.act_rotLeft,    -- 4
+    Player.act_rot180,     -- 5
+    Player.act_hardDrop,   -- 6
+    Player.act_softDrop,   -- 7
+    Player.act_hold,       -- 8
+    Player.act_func1,      -- 9
+    Player.act_func2,      -- 10
+    Player.act_insLeft,    -- 11
+    Player.act_insRight,   -- 12
+    Player.act_insDown,    -- 13
+    Player.act_down1,      -- 14
+    Player.act_down4,      -- 15
+    Player.act_down10,     -- 16
+    Player.act_dropLeft,   -- 17
+    Player.act_dropRight,  -- 18
+    Player.act_zangiLeft,  -- 19
+    Player.act_zangiRight, -- 20
+}
+function Player:pressKey(keyID)
     if self.id==1 then
         if GAME.recording then
             local L=GAME.rep
@@ -624,7 +630,7 @@ function Player:setPosition(x,y,size)
         self.absFieldX,self.absFieldY=x+150*size,y-10*size
     end
 end
-do-- function Player:movePosition(x,y,size)
+do -- function Player:movePosition(x,y,size)
     local function task_movePosition(self,x,y,size)
         local x1,y1,size1=self.x,self.y,self.size
         while true do
@@ -648,7 +654,7 @@ do-- function Player:movePosition(x,y,size)
         TASK.new(task_movePosition,self,x,y,size or self.size)
     end
 end
-do-- function Player:dropPosition(x,y,size)
+do -- function Player:dropPosition(x,y,size)
     local function task_dropPosition(self)
         local vy=0
         local x,y,size=self.x,self.y,self.size
@@ -698,7 +704,7 @@ function Player:set20G(if20g)
         self.bot:switch20G()
     end
 end
-function Player:setHold(count)-- Set hold count (false/true as 0/1)
+function Player:setHold(count) -- Set hold count (false/true as 0/1)
     if not count then
         count=0
     elseif count==true then
@@ -709,10 +715,10 @@ function Player:setHold(count)-- Set hold count (false/true as 0/1)
     self.holdTime=count
     while self.holdQueue[count+1] do rem(self.holdQueue) end
 end
-function Player:setNext(next)-- Set next count
+function Player:setNext(next) -- Set next count
     self.gameEnv.nextCount=next
 end
-function Player:setInvisible(time)-- Time in frames
+function Player:setInvisible(time) -- Time in frames
     if time<0 then
         self.keepVisible=true
         self.showTime=1e99
@@ -777,7 +783,7 @@ function Player:extraEvent(eventName,...)
     end
 end
 
-function Player:getHolePos()-- Get a good garbage-line hole position
+function Player:getHolePos() -- Get a good garbage-line hole position
     if self.garbageBeneath==0 then
         return generateLine(self.holeRND:random(10))
     else
@@ -788,7 +794,7 @@ function Player:getHolePos()-- Get a good garbage-line hole position
         return generateLine(p)
     end
 end
-function Player:garbageRelease()-- Check garbage buffer and try to release them
+function Player:garbageRelease() -- Check garbage buffer and try to release them
     local n=1
     while true do
         local A=self.atkBuffer[n]
@@ -803,7 +809,7 @@ function Player:garbageRelease()-- Check garbage buffer and try to release them
         end
     end
 end
-function Player:garbageRise(color,amount,line)-- Release n-lines garbage to field
+function Player:garbageRise(color,amount,line) -- Release n-lines garbage to field
     local _
     local t=self.showTime*2
     for _=1,amount do
@@ -825,7 +831,7 @@ function Player:garbageRise(color,amount,line)-- Release n-lines garbage to fiel
     self:freshBlockGhost()
     for i=1,#self.lockFX do
         _=self.lockFX[i]
-        _[2]=_[2]-30*amount-- Shift 30px per line cleared
+        _[2]=_[2]-30*amount -- Shift 30px per line cleared
     end
     for i=1,#self.dropFX do
         _=self.dropFX[i]
@@ -842,7 +848,7 @@ function Player:garbageRise(color,amount,line)-- Release n-lines garbage to fiel
 end
 
 local invList={2,1,4,3,5,6,7}
-function Player:pushLineList(L,mir)-- Push some lines to field
+function Player:pushLineList(L,mir) -- Push some lines to field
     local l=#L
     local S=self.gameEnv.skin
     for i=1,l do
@@ -866,7 +872,7 @@ function Player:pushLineList(L,mir)-- Push some lines to field
     end
     self:freshBlockGhost()
 end
-function Player:pushNextList(L,mir)-- Push some nexts to nextQueue
+function Player:pushNextList(L,mir) -- Push some nexts to nextQueue
     for i=1,#L do
         self:getNext(mir and invList[L[i]] or L[i])
     end
@@ -888,7 +894,7 @@ function Player:solid(x,y)
         return false
     end
     return self.field[y]
-    [x]>0-- to catch bug (nil[*])
+        [x]>0 -- to catch bug (nil[*])
 end
 function Player:ifoverlap(bk,x,y)
     local C=#bk[1]
@@ -918,7 +924,7 @@ function Player:attack(R,send,time,line)
     if not self.inTransitAttacks[sid] then
         self.inTransitAttacks[sid]={seenAttacks=0}
     end
-    table.insert(self.inTransitAttacks[sid], {send=send, time=time, line=line})
+    table.insert(self.inTransitAttacks[sid], {send=send,time=time,line=line})
     -- Send the attack
     -- We also send the number of seen attacks from this player.
     -- This allows that player to know which attacks are still in transit, and which have already arrived.
@@ -937,7 +943,7 @@ function Player:beAttacked(source,target_sid,send,time,line,seenCount)
         self.inTransitAttacks[source.sid]={seenAttacks=0}
     end
     -- Increment the number of seen attacks from that player.
-    self.inTransitAttacks[source.sid].seenAttacks=self.inTransitAttacks[source.sid].seenAttacks + 1
+    self.inTransitAttacks[source.sid].seenAttacks=self.inTransitAttacks[source.sid].seenAttacks+1
     -- Block against any in-transit attacks before recieving (this prevents passhtrough)
     for i=seenCount+1,#self.inTransitAttacks[source.sid] do
         local atk=self.inTransitAttacks[source.sid][i]
@@ -966,7 +972,7 @@ function Player:receive(A,send,time,line)
             time=0,
             sent=false,
             lv=min(floor(send^.69),5),
-        })-- Sorted insert(by time)
+        }) -- Sorted insert(by time)
         self.atkBufferSum=self.atkBufferSum+send
         self.stat.recv=self.stat.recv+send
         if self.sound then
@@ -1137,7 +1143,7 @@ function Player:_checkClear(field,start,height,CB,CX)
         for x=1,10 do
             if field[h][x]<=0 then
                 full=false
-                break-- goto CONTINUE_notFull
+                break -- goto CONTINUE_notFull
             end
         end
         if full then
@@ -1158,7 +1164,7 @@ function Player:_roofCheck()
         -- Find the highest y of blocks' x-th column
         while not CB[y][x] do y=y-1 end
 
-        local testX=self.curX+x-1-- Optimize
+        local testX=self.curX+x-1 -- Optimize
 
         -- Test the whole column of field to find roof
         for testY=self.curY+y,#self.field do
@@ -1229,7 +1235,7 @@ function Player:_checkSuffocate()
 end
 
 local spawnSFX_name={'spawn_1','spawn_2','spawn_3','spawn_4','spawn_5','spawn_6','spawn_7'}
-function Player:resetBlock()-- Reset Block's position and execute I*S
+function Player:resetBlock() -- Reset Block's position and execute I*S
     local C=self.cur
     local sc=C.RS.centerPos[C.id][C.dir]
 
@@ -1238,7 +1244,7 @@ function Player:resetBlock()-- Reset Block's position and execute I*S
     self.curY=y
     self.minY=y+sc[1]
 
-    local ENV = self.gameEnv
+    local ENV=self.gameEnv
 
     -- In the game settings, there are user-set control flags for irs,irs,ims
     -- These control in what way the user can buffer their rotate/hold/move inputs.
@@ -1256,8 +1262,8 @@ function Player:resetBlock()-- Reset Block's position and execute I*S
         -- To avoid a top-out
         if self:ifoverlap(C.bk, self.curX, self.curY) then
             -- Always perform the shift, since you're topped out anyway
-            self.curX = self.curX + self.movDir
-        elseif ENV.wait > 0 and ENV.ims then
+            self.curX=self.curX+self.movDir
+        elseif ENV.wait>0 and ENV.ims then
             -- Otherwise, only check IMS if it's enabled and you're in a mode with entry delay (20g)
             local x=self.curX+self.movDir
             if not self:ifoverlap(C.bk,x,y) then
@@ -1268,15 +1274,15 @@ function Player:resetBlock()-- Reset Block's position and execute I*S
 
     if not ENV.logicalIRS then
         -- If logical IRS is disabled, all IRS inputs will be buffered to prevent survival.
-        self.bufferedIRS = true
-        self.bufferedDelay = 0
-        if ENV.wait == 0 then
-            self.bufferedDelay = ENV.irscut
+        self.bufferedIRS=true
+        self.bufferedDelay=0
+        if ENV.wait==0 then
+            self.bufferedDelay=ENV.irscut
         end
     elseif ENV.wait==0 and ENV.irscut>0 and not self:ifoverlap(C.bk, self.curX, self.curY) then
         -- If IRS cut delay is enabled and we aren't currently dying, buffer the input instead.
-        self.bufferedIRS = true
-        self.bufferedDelay = ENV.irscut
+        self.bufferedIRS=true
+        self.bufferedDelay=ENV.irscut
     else
         -- If we're currently dying or in an entry-delay mode (20g), perform the rotation right away.
         if pressing[5] then
@@ -1373,8 +1379,8 @@ function Player:spin(d,ifpre)
     end
 end
 local phyHoldKickX={
-    [true]={0,-1,1},-- X==?.0 tests
-    [false]={-.5,.5},-- X==?.5 tests
+    [true]={0,-1,1},  -- X==?.0 tests
+    [false]={-.5,.5}, -- X==?.5 tests
 }
 function Player:_try_physical_hold_with(H)
     local C=self.cur
@@ -1395,7 +1401,7 @@ function Player:_try_physical_hold_with(H)
 end
 function Player:hold_norm(ifpre)
     local ENV=self.gameEnv
-    if self.holdIXSFromNext or #self.holdQueue<ENV.holdCount and self.nextQueue[1] then-- Skip
+    if self.holdIXSFromNext or #self.holdQueue<ENV.holdCount and self.nextQueue[1] then -- Skip
         local C=self.cur
         if C then
             ins(self.holdQueue,self:_getBlock(C.id,C.name,C.color))
@@ -1411,13 +1417,13 @@ function Player:hold_norm(ifpre)
             self.holdIXSFromNext=nil
         end
         self:_popNext(true)
-    else-- Hold
+    else -- Hold
         local C,H=self.cur,self.holdQueue[1]
         self.ctrlCount=0
 
-        if ENV.phyHold and C and H and not ifpre then-- Physical hold
+        if ENV.phyHold and C and H and not ifpre then -- Physical hold
             local x,y=self:_try_physical_hold_with(H)
-            if not x then -- All test failed, interrupt with sound
+            if not x then                             -- All test failed, interrupt with sound
                 SFX.play('drop_cancel')
                 return
             end
@@ -1428,7 +1434,7 @@ function Player:hold_norm(ifpre)
             self.cur=rem(self.holdQueue,1)
 
             self.curX,self.curY=x,y
-        else-- Normal hold
+        else -- Normal hold
             self.spinLast=false
 
             if C then
@@ -1468,9 +1474,9 @@ function Player:hold_swap(ifpre)
         local C,H=self.cur,self.nextQueue[hid]
         self.ctrlCount=0
 
-        if ENV.phyHold and C and not ifpre then-- Physical hold
+        if ENV.phyHold and C and not ifpre then -- Physical hold
             local x,y=self:_try_physical_hold_with(H)
-            if not x then -- All test failed, interrupt with sound
+            if not x then                       -- All test failed, interrupt with sound
                 SFX.play('finesseError')
                 return
             end
@@ -1482,7 +1488,7 @@ function Player:hold_swap(ifpre)
             self.cur.bagLine=nil
 
             self.curX,self.curY=x,y
-        else-- Normal hold
+        else -- Normal hold
             self.spinLast=false
 
             if C then
@@ -1559,7 +1565,7 @@ function Player:hold(ifpre,force)
     end
 end
 
-function Player:_getBlock(id,name,color,bagLineCounter)-- Get a block object
+function Player:_getBlock(id,name,color,bagLineCounter) -- Get a block object
     local ENV=self.gameEnv
     local dir=ENV.face[id]
     return {
@@ -1572,13 +1578,13 @@ function Player:_getBlock(id,name,color,bagLineCounter)-- Get a block object
         bagLine=bagLineCounter,
     }
 end
-function Player:getNext(id,bagLineCounter)-- Push a block to nextQueue
+function Player:getNext(id,bagLineCounter) -- Push a block to nextQueue
     ins(self.nextQueue,self:_getBlock(id,nil,nil,bagLineCounter))
     if self.bot then
         self.bot:pushNewNext(id)
     end
 end
-function Player:spawn()-- Spawn a piece
+function Player:spawn() -- Spawn a piece
     local ENV=self.gameEnv
     if self.holdIXSFromNext then
         self:hold(self.holdIXSFromNext[1],true)
@@ -1593,19 +1599,19 @@ function Player:spawn()-- Spawn a piece
 
     if self.nextQueue[1] then
         self:_popNext()
-    elseif self.holdQueue[1] then-- Force using hold
+    elseif self.holdQueue[1] then -- Force using hold
         self.spinLast=false
         self.ctrlCount=0
         self:hold(true,true)
         self:_triggerEvent('hook_spawn')
-    else-- Next queue is empty, force lose
+    else -- Next queue is empty, force lose
         self.spinLast=false
         self.ctrlCount=0
         self:lose(true)
         return
     end
 end
-function Player:_popNext(ifhold)-- Pop nextQueue to hand
+function Player:_popNext(ifhold) -- Pop nextQueue to hand
     if not self.nextQueue[1] then return end
     local ENV=self.gameEnv
     self.spinLast=false
@@ -1621,17 +1627,17 @@ function Player:_popNext(ifhold)-- Pop nextQueue to hand
     if not ifhold and pressing[8] and self.holdTime>0 then
         if not ENV.logicalIHS then
             -- If logical IHS is disabled, all IHS inputs will be buffered to prevent survival.
-            self.bufferedIRS = true
-            self.bufferedIHS = true
-            self.bufferedDelay = 0
-            if ENV.wait == 0 then
-                self.bufferedDelay = ENV.irscut
+            self.bufferedIRS=true
+            self.bufferedIHS=true
+            self.bufferedDelay=0
+            if ENV.wait==0 then
+                self.bufferedDelay=ENV.irscut
             end
         elseif ENV.wait==0 and ENV.irscut>0 and not self:willDieWith(self.cur) then
             -- If IRS cut delay is enabled and we're not currently dying, buffer the input instead.
-            self.bufferedIRS = true
-            self.bufferedIHS = true
-            self.bufferedDelay = ENV.irscut
+            self.bufferedIRS=true
+            self.bufferedIHS=true
+            self.bufferedDelay=ENV.irscut
             self:resetBlock()
         else
             -- If we're currently dying or in an entry-delay mode (20g), perform the hold immediately.
@@ -1665,8 +1671,8 @@ function Player:willDieWith(B)
     return B and self:ifoverlap(B.bk,self:getSpawnX(B),self:getSpawnY(B))
 end
 
-function Player:cancel(N)-- Cancel Garbage
-    local off=0-- Lines offseted
+function Player:cancel(N) -- Cancel Garbage
+    local off=0           -- Lines offseted
     local bf=self.atkBuffer
     for i=1,#bf do
         if self.atkBufferSum==0 or N==0 then
@@ -1674,7 +1680,7 @@ function Player:cancel(N)-- Cancel Garbage
         end
         local A=bf[i]
         if not A.sent then
-            local O=min(A.amount,N)-- Cur Offset
+            local O=min(A.amount,N) -- Cur Offset
             if N<A.amount then
                 A.amount=A.amount-O
             else
@@ -1691,22 +1697,22 @@ end
 -- Player.drop(self)-- Place piece
 -- Player:clearFilledLines(start,height)
 do
-    local clearSCR=setmetatable({-- B2B*=1.3; B3B*=1.8
-        80,200,400,1000,-- 1~4
-        1500,2000,2300,2600,3000,3400,-- 5~10
-        3800,4200,4600,5000,5500,6000,-- 11~16
-        6500,7000,7500,8000,-- 17~20
-        10000,11500,13000,14500,16000-- 21~25
+    local clearSCR=setmetatable({       -- B2B*=1.3; B3B*=1.8
+        80,200,400,1000,                -- 1~4
+        1500,2000,2300,2600,3000,3400,  -- 5~10
+        3800,4200,4600,5000,5500,6000,  -- 11~16
+        6500,7000,7500,8000,            -- 17~20
+        10000,11500,13000,14500,16000,  -- 21~25
     },{__index=function() return 20000 end})
-    local spinSCR={-- B2B*=1.2; B3B*=2.0; Mini*=.6
-        {200,750,1300,2000},-- Z
-        {200,750,1300,2000},-- S
-        {220,700,1300,2000},-- L
-        {220,700,1300,2000},-- J
-        {250,800,1400,2000},-- T
-        {260,900,1600,4500,7000},-- O
-        {300,1200,1700,4000,6000},-- I
-        {220,800,2000,3000,8000,26000},-- Else
+    local spinSCR={                     -- B2B*=1.2; B3B*=2.0; Mini*=.6
+        {200,750, 1300,2000},           -- Z
+        {200,750, 1300,2000},           -- S
+        {220,700, 1300,2000},           -- L
+        {220,700, 1300,2000},           -- J
+        {250,800, 1400,2000},           -- T
+        {260,900, 1600,4500,7000},      -- O
+        {300,1200,1700,4000,6000},      -- I
+        {220,800, 2000,3000,8000,26000}, -- Else
     }
     local b2bPoint={50,100,180,800,1000,9999}
 
@@ -1717,95 +1723,96 @@ do
     local spinVoice={'zspin','sspin','jspin','lspin','tspin','ospin','ispin','zspin','sspin','pspin','qspin','fspin','espin','tspin','uspin','vspin','wspin','xspin','jspin','lspin','rspin','yspin','nspin','hspin','ispin','ispin','cspin','ispin','ospin'}
     local clearVoice={'single','double','triple','techrash','pentacrash','hexacrash','heptacrash','octacrash','nonacrash','decacrash','undecacrash','dodecacrash','tridecacrash','tetradecacrash','pentadecacrash','hexadecacrash','heptadecacrash','octadecacrash','nonadecacrash','ultracrash','impossicrash'}
     local spinSFX={[0]='spin_0','spin_1','spin_2'}
-    local renSFX={} for i=1,11 do renSFX[i]='ren_'..i end
+    local renSFX={}
+    for i=1,11 do renSFX[i]='ren_'..i end
     local finesseList={
         {
             {1,2,1,0,1,2,2,1},
             {2,2,2,1,1,2,3,2,2},
-            1,2
-        },-- Z
-        1,-- S
+            1,2,
+        }, -- Z
+        1, -- S
         {
             {1,2,1,0,1,2,2,1},
             {2,2,3,2,1,2,3,3,2},
             {3,4,3,2,3,4,4,3},
             {2,3,2,1,2,3,3,2,2},
-        },-- J
-        3,-- L
-        3,-- T
+        }, -- J
+        3, -- L
+        3, -- T
         {
             {1,2,2,1,0,1,2,2,1},
-            1,1,1
-        },-- O
+            1,1,1,
+        }, -- O
         {
             {1,2,1,0,1,2,1},
             {2,2,2,2,1,1,2,2,2,2},
-            1,2
-        },-- I
+            1,2,
+        }, -- I
         {
             {1,2,1,0,1,2,2,1},
             {2,3,2,1,2,3,3,2},
-            1,2
-        },-- Z5
-        8,-- S5
-        3,-- self
-        3,-- Q
+            1,2,
+        }, -- Z5
+        8, -- S5
+        3, -- self
+        3, -- Q
         {
             {1,2,1,0,1,2,2,1},
             {2,3,2,1,2,3,3,2},
             {3,4,3,2,3,4,4,3},
-            2
-        },-- F
-        12,-- E
-        12,-- T5
-        3,-- U
+            2,
+        },  -- F
+        12, -- E
+        12, -- T5
+        3,  -- U
         {
             {1,2,1,0,1,2,2,1},
             {2,3,3,2,1,2,3,2},
             {3,4,4,3,2,3,4,3},
             {2,3,2,1,2,3,3,2},
-        },-- V
-        12,-- W
+        },  -- V
+        12, -- W
         {
             {1,2,1,0,1,2,2,1},
-            1,1,1
-        },-- X
+            1,1,1,
+        }, -- X
         {
             {1,2,1,0,1,2,1},
             {2,2,3,2,1,2,3,2,2},
             {3,4,3,2,3,4,3},
             2,
-        },-- J5
-        19,-- L5
-        19,-- R
-        19,-- Y
-        19,-- N
-        19,-- H
+        },  -- J5
+        19, -- L5
+        19, -- R
+        19, -- Y
+        19, -- N
+        19, -- H
         {
             {1,1,0,1,2,1},
             {2,3,2,2,1,2,3,2,3,2},
-            1,2
-        },-- I5
+            1,2,
+        }, -- I5
         {
             {1,2,1,0,1,2,2,1},
             {2,2,3,2,1,2,3,3,2,2},
-            1,2
-        },-- I3
+            1,2,
+        }, -- I3
         {
             {1,2,2,1,0,1,2,2,1},
             {2,3,3,2,1,2,3,3,2},
             {3,4,4,3,2,3,4,4,3},
-            2
-        },-- C
+            2,
+        }, -- C
         {
             {1,2,2,1,0,1,2,2,1},
             {2,2,3,2,1,1,2,3,2,2},
-            1,2
-        },-- I2
+            1,2,
+        }, -- I2
         {
             {1,2,2,1,0,1,2,3,2,1},
-            1,1,1
-        },-- O1
+            1,1,1,
+        }, -- O1
     }
     for k,v in next,finesseList do
         if type(v)=='table' then
@@ -1822,7 +1829,7 @@ do
     function Player:drop(autoLock)
         local _
         local CHN=VOC.getFreeChannel()
-        self.dropTime[11]=ins(self.dropTime,1,self.frameRun)-- Update speed dial
+        self.dropTime[11]=ins(self.dropTime,1,self.frameRun) -- Update speed dial
         local ENV=self.gameEnv
         local Stat=self.stat
         local piece=self.lastPiece
@@ -1831,14 +1838,15 @@ do
         local cmb=self.combo
         local C,CB,CX,CY=self.cur,self.cur.bk,self.curX,self.curY
         local sc=C.RS.centerPos[C.id][C.dir]
-        local clear-- If clear with no line fall
-        local cc,gbcc=0,0-- Row/garbage-row cleared,full-part
-        local atk,exblock=0,0-- Attack & extra defense
-        local send,off=0,0-- Sending lines remain & offset
-        local cscore,sendTime=10,0-- Score & send Time
+        local clear                -- If clear with no line fall
+        local cc,gbcc=0,0          -- Row/garbage-row cleared,full-part
+        local atk,exblock=0,0      -- Attack & extra defense
+        local send,off=0,0         -- Sending lines remain & offset
+        local cscore,sendTime=10,0 -- Score & send Time
         local dospin,mini=0
 
         piece.id,piece.name=C.id,C.name
+        piece.color=C.color
         piece.curX,piece.curY,piece.dir=self.curX,self.curY,C.dir
         piece.centX,piece.centY=self.curX+sc[2],self.curY+sc[1]
         piece.frame,piece.autoLock=self.frameRun,autoLock
@@ -1915,7 +1923,7 @@ do
         -- Finesse check (control)
         local finePts
         if not finesse then
-            if dospin then-- Allow 2 more step for roof-less spin
+            if dospin then -- Allow 2 more step for roof-less spin
                 self.ctrlCount=self.ctrlCount-2
             end
             local id=C.id
@@ -1959,7 +1967,7 @@ do
         piece.spin,piece.mini=dospin,false
         piece.pc,piece.hpc=false,false
         piece.special=false
-        if cc>0 then-- If lines cleared,about 200 lines of codes below
+        if cc>0 then -- If lines cleared,about 200 lines of codes below
             cmb=cmb+1
             if dospin then
                 cscore=(spinSCR[C.name] or spinSCR[8])[cc]
@@ -2110,6 +2118,16 @@ do
                 finish='lose'
             end
 
+            piece.row,piece.dig=cc,gbcc
+            piece.atk=atk
+            piece.exblock=exblock
+            piece.sendTime=sendTime
+            -- Hook attack calculation in case modes want to change the attack table
+            self:_triggerEvent('hook_atk_calculation')
+            atk=piece.atk
+            exblock=piece.exblock
+            sendTime=piece.sendTime
+
             -- Bonus atk/def when focused
             if ENV.layout=='royale' then
                 local i=min(#self.atker,9)
@@ -2120,10 +2138,10 @@ do
             end
 
             -- Send Lines
-            atk=floor(atk*(1+self.strength*.25))-- Badge Buff
+            atk=floor(atk*(1+self.strength*.25)) -- Badge Buff
             send=atk
             if exblock>0 then
-                exblock=floor(exblock*(1+self.strength*.25))-- Badge Buff
+                exblock=floor(exblock*(1+self.strength*.25)) -- Badge Buff
                 self:showText("+"..exblock,0,53,20,'fly')
                 off=off+self:cancel(exblock)
             end
@@ -2169,7 +2187,7 @@ do
                 end
                 if SETTING.vib>0 then VIB(SETTING.vib+cc+1) end
             end
-        else-- No lines clear
+        else -- No lines clear
             cmb=0
 
             -- Spin bonus
@@ -2214,9 +2232,9 @@ do
 
         cscore=floor(cscore)
         self:popScore(cscore)
-
-        piece.row,piece.dig=cc,gbcc
+        
         piece.score=cscore
+        piece.row,piece.dig=cc,gbcc
         piece.atk,piece.exblock=atk,exblock
         piece.off,piece.send=off,send
 
@@ -2284,11 +2302,15 @@ do
         end
         local n=C.name
         if dospin then
-            _=Stat.spin[n]  _[cc+1]=_[cc+1]+1-- Spin[1~25][0~4]
-            _=Stat.spins    _[cc+1]=_[cc+1]+1-- Spin[0~4]
+            _=Stat.spin[n]
+            _[cc+1]=_[cc+1]+1                 -- Spin[1~25][0~4]
+            _=Stat.spins
+            _[cc+1]=_[cc+1]+1                 -- Spin[0~4]
         elseif cc>0 then
-            _=Stat.clear[n] _[cc]=_[cc]+1-- Clear[1~25][1~5]
-            _=Stat.clears   _[cc]=_[cc]+1-- Clear[1~5]
+            _=Stat.clear[n]
+            _[cc]=_[cc]+1                     -- Clear[1~25][1~5]
+            _=Stat.clears
+            _[cc]=_[cc]+1                     -- Clear[1~5]
         end
 
         if finish then
@@ -2335,7 +2357,7 @@ do
         return _cc,_gbcc
     end
 end
-function Player:loadAI(data)-- Load AI with params
+function Player:loadAI(data) -- Load AI with params
     self.bot=BOT.new(self,data)
     self.bot.data=data
     self.bot:updateField()
@@ -2379,11 +2401,13 @@ local function task_finish(self)
         self.endCounter=self.endCounter+1
         if self.endCounter<40 then
             -- Make field visible
-            for j=1,#self.field do for i=1,10 do
-                if self.visTime[j][i]<20 then
-                    self.visTime[j][i]=self.visTime[j][i]+.5
+            for j=1,#self.field do
+                for i=1,10 do
+                    if self.visTime[j][i]<20 then
+                        self.visTime[j][i]=self.visTime[j][i]+.5
+                    end
                 end
-            end end
+            end
         elseif self.endCounter==60 then
             return
         end
@@ -2395,10 +2419,14 @@ local function task_fade(self)
         self.endCounter=self.endCounter+1
         if self.endCounter<40 then
             -- Make field invisible
-            for j=1,#self.field do for i=1,10 do
-                self.visTime[j][i]=math.max(3,self.visTime[j][i]-.5)
-            end end
-        elseif self.endCounter==60 then return end
+            for j=1,#self.field do
+                for i=1,10 do
+                    self.visTime[j][i]=math.max(3,self.visTime[j][i]-.5)
+                end
+            end
+        elseif self.endCounter==60 then
+            return
+        end
     end
 end
 local function task_lose(self)
@@ -2407,11 +2435,13 @@ local function task_lose(self)
         self.endCounter=self.endCounter+1
         if self.endCounter<40 then
             -- Make field visible
-            for j=1,#self.field do for i=1,10 do
-                if self.visTime[j][i]<20 then
-                    self.visTime[j][i]=self.visTime[j][i]+.5
+            for j=1,#self.field do
+                for i=1,10 do
+                    if self.visTime[j][i]<20 then
+                        self.visTime[j][i]=self.visTime[j][i]+.5
+                    end
                 end
-            end end
+            end
         elseif self.endCounter>80 then
             for i=1,#self.field do
                 for j=1,10 do
@@ -2591,11 +2621,11 @@ end
 function Player:resolveIRS()
     if self.bufferedIHS then
         self:hold(true)
-        self.bufferedIHS = false
+        self.bufferedIHS=false
     end
 
-    self.bufferedIRS = false
-    local pressing = self.keyPressing
+    self.bufferedIRS=false
+    local pressing=self.keyPressing
     if pressing[5] then
         self:act_rot180()
     elseif pressing[3] then
@@ -2666,13 +2696,13 @@ local function update_alive(P,dt)
             end
         end
     end
-    
+
     -- Buffer IRS after IRS cut delay has elapsed.
     -- The purpose of this is to allow the player to release their rotate key during the IRS cut delay,
     -- which will allow them to avoid accidentally using IRS.
     if P.bufferedDelay then
-        P.bufferedDelay = P.bufferedDelay - 1
-        if P.bufferedDelay <= 0 then
+        P.bufferedDelay=P.bufferedDelay-1
+        if P.bufferedDelay<=0 then
             if P.bufferedIRS then
                 P:resolveIRS()
             end
@@ -2770,7 +2800,7 @@ local function update_alive(P,dt)
             stopAtFalling=true
             P:_updateFalling(P.falling-1)
             if P.falling>0 then
-                break-- goto THROW_stop
+                break -- goto THROW_stop
             end
         end
 
@@ -2784,14 +2814,14 @@ local function update_alive(P,dt)
                 if P.waiting<=0 then
                     P:spawn()
                 end
-                break-- goto THROW_stop
+                break -- goto THROW_stop
             end
 
             -- Natural block falling
             if P.cur then
                 if P.curY>P.ghoY then
                     local D=P.dropDelay
-                    local dist-- Drop distance
+                    local dist -- Drop distance
                     if D>1 then
                         D=D-1
                         if P.keyPressing[7] and P.downing>=ENV.sddas then
@@ -2802,9 +2832,9 @@ local function update_alive(P,dt)
                             P.dropDelay=(D-1)%ENV.drop+1
                         else
                             P.dropDelay=D
-                            break-- goto THROW_stop
+                            break    -- goto THROW_stop
                         end
-                    elseif D==1 then-- We don't know why dropDelay is 1, so checking ENV.drop>1 is neccessary
+                    elseif D==1 then -- We don't know why dropDelay is 1, so checking ENV.drop>1 is neccessary
                         if ENV.drop>1 and P.downing>=ENV.sddas and (P.downing-ENV.sddas)%ENV.sdarr==0 then
                             dist=2
                         else
@@ -2812,7 +2842,7 @@ local function update_alive(P,dt)
                         end
                         -- Reset drop delay
                         P.dropDelay=ENV.drop
-                    else-- High gravity case (>1G)
+                    else -- High gravity case (>1G)
                         -- Add extra 1 if time to auto softdrop
                         if P.downing>ENV.sddas and (P.downing-ENV.sddas)%ENV.sdarr==0 then
                             dist=1/D+1
@@ -2840,7 +2870,7 @@ local function update_alive(P,dt)
                 else
                     P.lockDelay=P.lockDelay-1
                     if P.lockDelay>=0 then
-                        break-- goto THROW_stop
+                        break -- goto THROW_stop
                     end
                     P:drop(true)
                     if P.bot then
@@ -2877,12 +2907,12 @@ local function update_streaming(P)
     local eventTime=P.stream[P.streamProgress]
     while eventTime and P.frameRun==eventTime or eventTime==0 do
         local event=P.stream[P.streamProgress+1]
-        if event==0 then-- Just wait
-        elseif event<=32 then-- Press key
+        if event==0 then       -- Just wait
+        elseif event<=32 then  -- Press key
             P:pressKey(event)
-        elseif event<=64 then-- Release key
+        elseif event<=64 then  -- Release key
             P:releaseKey(event-32)
-        elseif event<=128 then-- Extra Event
+        elseif event<=128 then -- Extra Event
             local eventName=P.gameEnv.extraEvent[event-64][1]
             local eventParamCount=P.gameEnv.extraEvent[event-64][2]
             local sourceSid=P.stream[P.streamProgress+2]
@@ -2978,21 +3008,21 @@ function Player:update(dt)
                 end
                 if dataDelta>0 then
                     for _=1,
-                        -- Speed up to finish
-                        self.loseTimer and min(dataDelta,
-                            self.loseTimer>16 and 2 or
-                            self.loseTimer>6.2 and 12 or
-                            self.loseTimer>2.6 and 260 or
-                            2600
-                        ) or
-                        -- Chasing faster when slower
-                        dataDelta<26 and 1 or
-                        dataDelta<42 and 2 or
-                        dataDelta<62 and 3 or
-                        dataDelta<70.23 and 5 or
-                        dataDelta<94.2 and 7 or
-                        dataDelta<126 and 10 or
-                        20
+                    -- Speed up to finish
+                    self.loseTimer and min(dataDelta,
+                        self.loseTimer>16 and 2 or
+                        self.loseTimer>6.2 and 12 or
+                        self.loseTimer>2.6 and 260 or
+                        2600
+                    ) or
+                    -- Chasing faster when slower
+                    dataDelta<26 and 1 or
+                    dataDelta<42 and 2 or
+                    dataDelta<62 and 3 or
+                    dataDelta<70.23 and 5 or
+                    dataDelta<94.2 and 7 or
+                    dataDelta<126 and 10 or
+                    20
                     do
                         update_streaming(self)
                         update_alive(self,dt)
@@ -3183,7 +3213,7 @@ function Player:lose(force)
         for i=1,#PLY_ALIVE-1 do
             if PLY_ALIVE[i].group==0 or PLY_ALIVE[i].group~=PLY_ALIVE[i+1].group then
                 finished=false
-                break-- goto BREAK_notFinished
+                break -- goto BREAK_notFinished
             end
         end
         -- Only 1 people or only 1 team survived, they win
