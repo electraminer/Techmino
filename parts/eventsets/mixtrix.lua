@@ -115,10 +115,12 @@ return {
         P.modeData.combo=0
         P.modeData.rowProgress=0
         P.modeData.meter=0
+        -- Disable attacks
+        P.strength=-4
         -- Choose cards
         P.modeData.locations={
             require("parts.cards.locations.".."darkCavern"),
-            require("parts.cards.locations.".."arenaOfGlory"),
+            -- require("parts.cards.locations.".."arenaOfGlory"),
         }
         P.modeData.virtues={
             require("parts.cards.virtues.".."reliability"),
