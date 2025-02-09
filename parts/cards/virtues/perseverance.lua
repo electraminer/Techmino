@@ -7,4 +7,16 @@ return {
             P.modeData.meter=P.modeData.meter+meterValue
         end
     end,
+
+    title=function(P)
+        return "Perseverence"
+    end,
+
+    rulesText=function(P)
+        meterValue=math.min(50,5*(P.modeData.b2b-1))
+        return {
+            "Gain up to 50 MP per b2b clear.",
+            "5 MP / b2b chained (Current: "..meterValue..").",
+        }
+    end,
 }

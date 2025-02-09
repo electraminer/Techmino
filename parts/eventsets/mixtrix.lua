@@ -62,9 +62,39 @@ end
 
 return {
     mesDisp=function(P)
+        -- Calculate score with bonuses
+        local finalScore=P.modeData.score
+        for i=1,#P.modeData.cards do
+            if P.modeData.cards[i].score then
+                finalScore=finalScore+P.modeData.cards[i].score(P)
+            end
+        end
+        local scoreStr=string.format("%06d",finalScore)
+            .."  "..string.format("%02d",P.modeData.rowProgress)
+            .."/"..P.modeData.rowTarget
         setFont(55)
-        GC.mStr(string.format("%06d",P.modeData.score),250,-80)
-        GC.mStr(string.format("%02d",P.modeData.rowProgress),420,-80)
+        GC.mStr(scoreStr, 300,-80)
+
+        local y=-30
+
+        setFont(30)
+        GC.print("Rules",600,y)
+        y=y+30
+
+        for i=1,#P.modeData.cards do
+            if P.modeData.cards[i].title then
+                setFont(25)
+                GC.print(P.modeData.cards[i].title(P),600,y+5)
+                y=y+30
+            end
+            if P.modeData.cards[i].rulesText then
+                for _,line in next,P.modeData.cards[i].rulesText(P) do
+                    setFont(20)
+                    GC.print(line,600,y)
+                    y=y+20
+                end
+            end
+        end
         renderMeter(P)
     end,
     task=function(P)
@@ -78,6 +108,7 @@ return {
         P.modeData.garbageDistribution=function() -- Function that generates garbage lines
             return generateLine(P.atkRND:random(10))
         end
+        P.modeData.rowTarget=100
         -- Set up variables
         P.modeData.score=0
         P.modeData.b2b=0
@@ -85,16 +116,35 @@ return {
         P.modeData.rowProgress=0
         P.modeData.meter=0
         -- Choose cards
-        P.modeData.location=require("parts.cards.locations.".."arenaOfGlory")
+        P.modeData.locations={
+            require("parts.cards.locations.".."darkCavern"),
+            require("parts.cards.locations.".."arenaOfGlory"),
+        }
         P.modeData.virtues={
             require("parts.cards.virtues.".."reliability"),
             require("parts.cards.virtues.".."perseverance"),
         }
+        P.modeData.characters={
+            require("parts.cards.characters.".."architect"),
+            require("parts.cards.characters.".."gambler"),
+        }
+        P.modeData.goals={
+            require("parts.cards.goals.".."perfection"),
+            require("parts.cards.goals.".."entrepreneurship"),
+        }
         -- Initialize cards list
         P.modeData.cards={}
-        table.insert(P.modeData.cards,P.modeData.location)
+        for i=1,#P.modeData.locations do
+            table.insert(P.modeData.cards,P.modeData.locations[i])
+        end
         for i=1,#P.modeData.virtues do
             table.insert(P.modeData.cards,P.modeData.virtues[i])
+        end
+        for i=1,#P.modeData.characters do
+            table.insert(P.modeData.cards,P.modeData.characters[i])
+        end
+        for i=1,#P.modeData.goals do
+            table.insert(P.modeData.cards,P.modeData.goals[i])
         end
         -- Initialize cards
         for i=1,#P.modeData.cards do
@@ -108,6 +158,8 @@ return {
         end
 
         while true do
+            -- Cap the meter
+            P.modeData.meter=math.min(P.modeData.meter,1000)
             -- Clear normal b2b
             P.b2b=0
             coroutine.yield()
@@ -119,15 +171,17 @@ return {
         if P.lastPiece.pc or P.lastPiece.hpc then --PC (or HPC, because of garbage)
             b2b=true
             score=400*(1+P.lastPiece.row)
-        elseif P.lastPiece.id==5 and P.lastPiece.spin then -- Tspin
+        elseif P.lastPiece.spin then -- Spin
             b2b=true
             score=400*(1+P.lastPiece.row)
             if P.lastPiece.mini then
+                score=score/4
+            elseif P.lastPiece.id~=5 then -- All-spin
                 score=score/2
             end
-        elseif P.lastPiece.row==4 then --Quad
+        elseif P.lastPiece.row>=4 then --Quad
             b2b=true
-            score=800
+            score=800+1200*(P.lastPiece.row-4)
         elseif P.lastPiece.row>0 then --Normal clear
             score=({100,300,500})[P.lastPiece.row]
         end
@@ -166,6 +220,29 @@ return {
                 P.modeData.cards[i].hook_drop(P)
             end
         end
+
+        -- End the game
+        if P.modeData.rowProgress>=P.modeData.rowTarget then
+            P.control=false
+        end
         
-    end
+    end,
+
+    hook_die=function(P)
+        P.curY=P.curY+20
+        P.control=false
+        return
+    end,
+
+    fkey1=function(P)
+        if #P.modeData.characters>=1 then
+            P.modeData.characters[1].activate(P)
+        end
+    end,
+
+    fkey2=function(P)
+        if #P.modeData.characters>=2 then
+            P.modeData.characters[2].activate(P)
+        end
+    end,
 }

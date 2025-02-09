@@ -26,5 +26,18 @@ return {
         P.gameEnv.drop=0
         -- Reduce DAS (so that gravity works)
         P.gameEnv.arr=math.max(P.gameEnv.arr,1)
+        -- Increase entry delay (so that IRS works)
+        P.gameEnv.wait=math.max(P.gameEnv.wait,6)
+    end,
+
+    title=function(P)
+        return "Arena of Glory"
+    end,
+
+    rulesText=function(P)
+        return {
+            "Maximum gravity is enabled.",
+            "Pieces no longer follow 7-bag.",
+        }
     end,
 }
