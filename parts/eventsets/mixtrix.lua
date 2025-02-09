@@ -119,8 +119,8 @@ return {
         P.strength=-4
         -- Choose cards
         P.modeData.locations={
-            require("parts.cards.locations.".."darkCavern"),
-            -- require("parts.cards.locations.".."arenaOfGlory"),
+            -- require("parts.cards.locations.".."darkCavern"),
+            require("parts.cards.locations.".."arenaOfGlory"),
         }
         P.modeData.virtues={
             require("parts.cards.virtues.".."reliability"),

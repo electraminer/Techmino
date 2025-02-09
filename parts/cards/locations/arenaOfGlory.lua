@@ -1,9 +1,9 @@
 return {
     init=function(P)
         -- Initialize 4-hist randomizer
-        hist={1,2,1,2}
+        local hist={1,2,1,2}
         function P:newNext()
-            piece=P.seqRND:random(7)
+            local piece=P.seqRND:random(7)
             for attempt=1,4 do
                 includes=false
                 for i=1,4 do
@@ -23,11 +23,11 @@ return {
             P:newNext()
         end
         -- Increase gravity
-        P.gameEnv.drop=0
+        -- P.gameEnv.drop=0
         -- Reduce DAS (so that gravity works)
-        P.gameEnv.arr=math.max(P.gameEnv.arr,1)
+        -- P.gameEnv.arr=math.max(P.gameEnv.arr,1)
         -- Increase entry delay (so that IRS works)
-        P.gameEnv.wait=math.max(P.gameEnv.wait,6)
+        -- P.gameEnv.wait=math.max(P.gameEnv.wait,6)
     end,
 
     title=function(P)
