@@ -24,8 +24,6 @@ return {
         end
 
         P.modeData.meter=P.modeData.meter-250
-
-        -- TODO: somehow this crashes next time I clear a line. Stats.clears is missing?
     end,
 
     cost=250,
