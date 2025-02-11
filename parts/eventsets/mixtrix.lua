@@ -180,6 +180,7 @@ return {
     task=function(P)
         -- Set row target (we do this up top so that the player can place their piece during setup without counting as game end)
         P.modeData.rowTarget=100
+        P.gameEnv.fall=0
         -- Set up card selection
         P.modeData.cards={}
         P.modeData.choices={}
