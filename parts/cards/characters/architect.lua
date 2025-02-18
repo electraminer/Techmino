@@ -2,7 +2,7 @@ return {
     activate=function(P)
         if P.modeData.meter<250 then return end
         local y=1
-        while P.field[y].garbage do
+        while P.field[y] and P.field[y].garbage do
             y=y+1
         end
         highestGarb=y-1
