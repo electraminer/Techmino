@@ -112,7 +112,7 @@ local function savestateCtx(P)
         'spikeTime', 'spike', 'spikeText',
         'life', 'result',
         'lastPiece',
-    }, {'speculativeAtk', 'combo', 'checkmate', 'cancelCharge', 'b2bCharge'}}
+    }, {'holeQueue', 'combo', 'checkmate', 'b2bCharge'}}
     local blacklist = {false, false}
     return saved, whitelist, blacklist
 end
@@ -211,18 +211,6 @@ function initTargeting(P)
     end
 end
 
-function initCancelMeter(P)
-    -- Override garbage cancelling - you can no longer cancel garbage, but you'll be able to use the cancel meter
-    local prevCancel = P.cancel
-
-    function P:cancel()
-        -- Do not cancel garbage normally at all
-        return 0
-    end
-
-    P.modeData.cancelCharge = 0
-end
-
 function startTurn(P)
     P.modeData.startedTurnAtPiece = P.stat.piece
     P.modeData.startingPeriod = P.modeData.period
@@ -317,35 +305,58 @@ function initSpeculativeNext(P)
     end
 end
 
-function initSpeculativeAtk(P)
+function initHoleQueue(P)
     local garbageRise = P.garbageRise
     -- Rising garbage is converted into speculation.
-    P.modeData.speculativeAtk = {}
-    local garbageRise = P.garbageRise
-    function P:garbageRise(color, amount, line)
-        garbageRise(P, color, amount, 1023)
-        table.insert(P.modeData.speculativeAtk, amount)
-        tryAutoCommit(self) -- Try auto commit immediately, to ensure ColdClear never sees filled lines.
-    end
-    -- Speculation is converted into generating garbage holes on a commit.
     P.modeData.atkLast = P.holeRND:random(10)
-    function P:commitGarbageRise()
-        local totalAtk = 0
-        for _,atk in ipairs(P.modeData.speculativeAtk) do
-            totalAtk = totalAtk + atk
+    P.modeData.holeQueue = {P.modeData.atkLast}
+    function P:genAtk()
+        local position = P.holeRND:random(9)
+        if position >= P.modeData.atkLast then
+            position = position + 1
         end
-        for _,atk in ipairs(P.modeData.speculativeAtk) do
-            local position = P.holeRND:random(9)
-            if position >= P.modeData.atkLast then
-                position = position + 1
-            end
-            P.modeData.atkLast = position
-            for _=1,atk do
-                P.field[totalAtk][position] = 0
-                totalAtk = totalAtk - 1
+        P.modeData.atkLast = position
+        table.insert(P.modeData.holeQueue, P.modeData.atkLast)
+    end
+    for i=1,6 do
+        P:genAtk()
+    end
+
+    local garbageRelease = P.garbageRelease
+    function P:garbageRelease()
+        local n=1
+        while true do
+            local A=self.atkBuffer[n]
+            if A and not A.sent then
+                local color = 21
+                if A.countdown==703 then
+                    color = 23
+                end
+                local hole = table.remove(P.modeData.holeQueue, 1)
+                local line = 1023 - MATH.pow(2, hole - 1)
+                self:garbageRise(color, A.amount, line)
+                P:genAtk()
+
+                self.atkBufferSum=self.atkBufferSum-A.amount
+                A.sent,A.time=true,0
+                self.stat.pend=self.stat.pend+A.amount
+                n=n+1
+            else
+                break
             end
         end
-        P.modeData.speculativeAtk = {}
+
+        
+        -- Shift permanent rows to the bottom
+        local newfield = {}
+        for y,row in ipairs(P.field) do
+            if row[1] == 24 then
+                table.insert(newfield, 1, row)
+            else
+                table.insert(newfield, row)
+            end
+        end
+        P.field = newfield
     end
 end
 
@@ -356,13 +367,40 @@ function commit(P)
         return
     end
     P:commitNewNext()
-    P:commitGarbageRise()
     -- Clear savestates
     P.modeData.savestates = {}
     saveState(P)
     -- Pass turn
     local turnPieces = P.stat.piece - P.modeData.startedTurnAtPiece
     if turnPieces == 7 then
+        -- Update garbage
+        for y,row in ipairs(P.field) do
+            local permanent = false
+            for x=1,10 do
+                if row[x] == 23 then
+                    permanent = true
+                end
+                if row[x] == 21 then
+                    row[x] = 23
+                end
+            end
+            if permanent then
+                for x=1,10 do
+                    row[x] = 24
+                end
+            end
+        end
+        -- Shift permanent rows to the bottom
+        local newfield = {}
+        for y,row in ipairs(P.field) do
+            if row[1] == 24 then
+                table.insert(newfield, 1, row)
+            else
+                table.insert(newfield, row)
+            end
+        end
+        P.field = newfield
+
         P.control = false
         initTurnTimer(P)
         P:extraEvent('passTurn')
@@ -466,11 +504,9 @@ function turnBased(timeControls) return {
 
         initRNG(P)
         initSpeculativeNext(P)
-        initSpeculativeAtk(P)
+        initHoleQueue(P)
 
         initTargeting(P)
-
-        initCancelMeter(P)
 
         P.modeData.b2bCharge = 0
         
@@ -503,19 +539,19 @@ function turnBased(timeControls) return {
         while true do
             if P.control then
                 -- Combine adjacent combo garbage
-                for i=1,#P.atkBuffer do
-                    local atk = P.atkBuffer[i]
-                    local nextAtk = P.atkBuffer[i+1]
-                    if atk.countdown == 703 then
-                        atk.countdown = 0
-                        if nextAtk and nextAtk.countdown == 703 then
-                            -- Merge
-                            atk.amount = 2
-                            nextAtk.amount = 0
-                            nextAtk.countdown = 0
-                        end
-                    end
-                end
+                -- for i=1,#P.atkBuffer do
+                --     local atk = P.atkBuffer[i]
+                --     local nextAtk = P.atkBuffer[i+1]
+                --     if atk.countdown == 703 then
+                --         atk.countdown = 0
+                --         if nextAtk and nextAtk.countdown == 703 then
+                --             -- Merge
+                --             atk.amount = 2
+                --             nextAtk.amount = 0
+                --             nextAtk.countdown = 0
+                --         end
+                --     end
+                -- end
 
                 if P.waiting > 1e98 then
                     -- Auto pass turn if waiting at the end of your turn
@@ -532,7 +568,7 @@ function turnBased(timeControls) return {
     end,
 
     hook_drop = function(P)
-        P.b2b = P.modeData.b2bCharge
+        P.b2b = P.modeData.b2bCharge * 50
         -- End turn
         local turnPieces = P.stat.piece - P.modeData.startedTurnAtPiece
         P.cur = nil
@@ -548,7 +584,7 @@ function turnBased(timeControls) return {
     
     hook_die = function(P)
         -- Clear saved garbage
-        P.modeData.speculativeAtk = {}
+        P.modeData.holeQueue = {}
 
         if P.life == 0 then
             P.modeData.checkmate = true
@@ -566,73 +602,71 @@ function turnBased(timeControls) return {
 
     hook_atk_calculation = function(P)
         if P.lastPiece.row > 0 then
-            -- Line clear bonus
-            local CANCEL_TABLE = {0, 1, 2, 4}
-            local cancelCharge = CANCEL_TABLE[P.lastPiece.row]
-            local ATTACK_TABLE = {{}, {1}, {2}, {2,2}}
-            P.atk = ATTACK_TABLE[P.lastPiece.row]
-            P.sendTimes = {}
-            for i=1,#P.atk do
-                table.insert(P.sendTimes, 0)
-            end
-            local b2bCharge = -200
+            -- Normals
+            -- Tetris only sends 3 rather than 4, to give
+            -- a means of sending 3 damage
+            local ATTACK_TABLE = {0, 1, 2, 3}
+            local attack = ATTACK_TABLE[P.lastPiece.row]
+            local b2bCharge = -2
+            local cheesy = false
+            local red = false
             if P.lastPiece.row == 4 then
-                b2bCharge = 200
+                b2bCharge = 2
             end
             -- Combo
             if P.combo > 0 then
-                -- For now, simple combo only adds 1 to attack
-                table.insert(P.atk, 1)
-                table.insert(P.sendTimes, 703)
-                cancelCharge = cancelCharge + 1
+                -- Combo adds 1 to attack
+                attack = attack + 1
+                if b2bCharge < 0 then
+                    -- During a combo, b2b loss is reduced
+                    b2bCharge = -0.5
+                end
             end
             -- Spin (overrides combo)
-            if P.lastPiece.spin and not P.lastPiece.mini then
-                -- Only 1 hole per spin to reduce overall damage
-                P.atk = {}
-                P.sendTimes = {}
-                for i=1,P.lastPiece.row do
-                    table.insert(P.atk, 1)
-                    table.insert(P.sendTimes, 0)
-                end
-                cancelCharge = 0
-                b2bCharge = 100 * P.lastPiece.row
-            end
-            if P.lastPiece.mini then
-                -- Minis prevent b2b loss
-                b2bCharge = 0
-            end
-            -- Back to back
-            if P.lastPiece.special then
-                if P.lastPiece.b2b > 800 then
-                    table.insert(P.atk, 1)
-                    table.insert(P.sendTimes, 0)
-                    table.insert(P.atk, 1)
-                    table.insert(P.sendTimes, 0)
-                elseif P.lastPiece.b2b >= 50 then
-                    table.insert(P.atk, 1)
-                    table.insert(P.sendTimes, 0)
-                end
+            if P.lastPiece.spin then
+                local SPIN_TABLE = {1, 2, 4}
+                attack = SPIN_TABLE[P.lastPiece.row]
+                b2bCharge = attack / 2
             end
             -- PC/HPC
             if P.lastPiece.pc then
-                -- Temporarily disable PC
-                -- table.insert(P.atk, 2)
-                -- table.insert(P.atk, 2)
+                attack = 4
+                cheesy = true
+                red = true
             elseif P.lastPiece.hpc then
-                -- Temporarily disable HPC
-                -- table.insert(P.atk, 2)
+                cheesy = true
+                red = true
             end
             -- Update charge
-            P.modeData.cancelCharge = P.modeData.cancelCharge + cancelCharge
             P.modeData.b2bCharge = P.modeData.b2bCharge + b2bCharge
             if P.modeData.b2bCharge < 0 then
                 P.modeData.b2bCharge = 0
             end
-            if P.modeData.b2bCharge > 1000 then
-                P.modeData.b2bCharge = 1000
+            if P.modeData.b2bCharge > 40 then
+                P.modeData.b2bCharge = 40
             end
-            P.b2b = P.modeData.b2bCharge
+            P.b2b = P.modeData.b2bCharge * 50
+
+            -- Add the attack values as an actual attack
+            P.atk = {}
+            if cheesy then
+                -- Split into many 1s
+                for i=1,attack do
+                    table.insert(P.atk, 1)
+                end
+            else
+                -- One big group
+                table.insert(P.atk, attack)
+            end
+            P.sendTimes = {}
+            for i=1,#P.atk do
+                if red then
+                    -- A value of 703 indicates red garbage
+                    table.insert(P.sendTimes, 703)
+                else
+                    table.insert(P.sendTimes, 0)
+                end
+            end
         end
     end,
     
@@ -652,8 +686,8 @@ function turnBased(timeControls) return {
         end
 
         -- Use cancel charge
-        if P.modeData.cancelCharge >= totalBuffer then
-            P.modeData.cancelCharge = 0
+        if P.modeData.b2b >= totalBuffer then
+            P.modeData.b2b = 0
             P.atkBuffer = {}
             P.atkBufferSum = 0
         end
@@ -798,20 +832,39 @@ function turnBased(timeControls) return {
             GC.pop()
         end
 
-        -- Display cancel charge table
-        local cc = P.modeData.cancelCharge
-        local font = cc >= 10 and 15 or 30
-        setFont(font)
+        GC.push('transform')
         
-        -- Calculate
-        local totalBuffer = 0
-        for i=1,#P.atkBuffer do
-            totalBuffer = totalBuffer + P.atkBuffer[i].amount
+        -- Apply shaking
+        if P.shakeTimer>0 then
+            local dx=math.floor(P.shakeTimer/2)
+            local dy=math.floor(P.shakeTimer/3)
+            GC.translate(dx^1.6*(dx%2*2-1)*(P.gameEnv.shakeFX+1)/30,dy^1.4*(dy%2*2-1)*(P.gameEnv.shakeFX+1)/30)
         end
-        GC.setColor(cc<totalBuffer and COLOR.Z or COLOR.lB)
-        GC.rectangle('fill',470,600-cc*30,7,cc*30,2)
-        GC.mStr(cc,477,600-cc*30-5-font)
 
+        -- Apply swingOffset
+        local O=P.swingOffset
+        if P.gameEnv.shakeFX then
+            local k=P.gameEnv.shakeFX
+            GC.translate(O.x*k+150+150,O.y*k+300)
+            GC.rotate(O.a*k)
+            GC.translate(-150,-300)
+        else
+            GC.translate(150,0)
+        end
+
+        -- Display upcoming garbage
+        GC.setColor(COLOR.Z)
+        GC.rectangle('fill',0,600,300,30,2)
+        if P.frameRun % 15 < 12 and P.modeData.holeQueue[3]~=nil then
+            GC.setColor(COLOR.R)
+            GC.rectangle('fill',-30+P.modeData.holeQueue[1]*30,600,30,10,2)
+            GC.setColor(COLOR.O)
+            GC.rectangle('fill',-30+P.modeData.holeQueue[2]*30,610,30,10,2)
+            GC.setColor(COLOR.Y)
+            GC.rectangle('fill',-30+P.modeData.holeQueue[3]*30,620,30,10,2)
+        end
+
+        GC.pop()
 
 		-- Display time remaining
         GC.setColor(COLOR.Z)
