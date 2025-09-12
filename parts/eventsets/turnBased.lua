@@ -713,8 +713,8 @@ function turnBased(timeControls) return {
         end
 
         -- Use cancel charge
-        if P.modeData.b2b >= totalBuffer then
-            P.modeData.b2b = 0
+        if P.modeData.b2bCharge >= totalBuffer then
+            P.modeData.b2bCharge = 0
             P.atkBuffer = {}
             P.atkBufferSum = 0
         end
