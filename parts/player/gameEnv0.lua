@@ -54,6 +54,8 @@ return {
     bufferLimit=1e99,
     fillClear=true,
 
+    b2b=50,b3b=800,
+
     layout='normal',
     fkey1=false,fkey2=false,fkey3=false,fkey4=false,
     keyCancel={},

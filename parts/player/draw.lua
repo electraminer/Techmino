@@ -433,17 +433,17 @@ local function _drawBuffer(atkBuffer,bufferWarn,atkBufferSum1,atkBufferSum)
         end
     end
 end
-local function _drawB2Bbar(b2b,b2b1)
+local function _drawB2Bbar(P,b2b,b2b1)
     local a,b=b2b,b2b1
     if a>b then a,b=b,a end
     if b>0 then
         gc_setColor(.8,1,.2)
         gc_rectangle('fill',-14,600-b*.6,11,b*.6,2)
-        gc_setColor(b2b<50 and COLOR.Z or b2b<=800 and COLOR.lR or COLOR.lB)
+        gc_setColor(b2b<P.gameEnv.b2b and COLOR.Z or b2b<=P.gameEnv.b3b and COLOR.lR or COLOR.lB)
         gc_rectangle('fill',-14,600-a*.6,11,a*.6,2)
         if TIME()%.5<.3 then
             gc_setColor(1,1,1)
-            gc_rectangle('fill',-15,b<50 and 570 or 120,13,3,2)
+            gc_rectangle('fill',-15,b<P.gameEnv.b2b and (1000-P.gameEnv.b2b)/50*30 or (1000-P.gameEnv.b3b)/50*30,13,3,2)
         end
     end
 end
@@ -928,7 +928,7 @@ function draw.norm(P,repMode)
             gc_setColor(P.frameColor)
             gc_draw(playerborder,-17,-12)
             _drawBuffer(P.atkBuffer,ENV.bufferWarn,P.atkBufferSum1,P.atkBufferSum)
-            _drawB2Bbar(P.b2b,P.b2b1)
+            _drawB2Bbar(P,P.b2b,P.b2b1)
             _drawLDI(ENV.easyFresh,P.lockDelay/ENV.lock,P.freshTime)
 
             -- Draw target selecting pad

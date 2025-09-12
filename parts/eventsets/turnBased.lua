@@ -509,6 +509,8 @@ function turnBased(timeControls) return {
         initTargeting(P)
 
         P.modeData.b2bCharge = 0
+        P.gameEnv.b2b = 400
+        P.gameEnv.b3b = 800
         
         P.modeData.savestates = {}
         saveState(P)
@@ -610,8 +612,15 @@ function turnBased(timeControls) return {
             local b2bCharge = -2
             local cheesy = false
             local red = false
+            local bonus = false
             if P.lastPiece.row == 4 then
                 b2bCharge = 2
+                if P.modeData.b2bCharge > 8 then
+                    red = true
+                end
+                if P.modeData.b2bCharge > 16 then
+                    bonus = true
+                end
             end
             -- Combo
             if P.combo > 0 then
@@ -627,15 +636,29 @@ function turnBased(timeControls) return {
                 local SPIN_TABLE = {1, 2, 4}
                 attack = SPIN_TABLE[P.lastPiece.row]
                 b2bCharge = attack / 2
+                if P.modeData.b2bCharge > 8 then
+                    red = true
+                end
+                if P.modeData.b2bCharge > 16 then
+                    bonus = true
+                end
             end
             -- PC/HPC
             if P.lastPiece.pc then
                 attack = 4
                 cheesy = true
                 red = true
+                b2bCharge = 2
+                if P.modeData.b2bCharge > 16 then
+                    bonus = true
+                end
             elseif P.lastPiece.hpc then
                 cheesy = true
                 red = true
+                b2bCharge = 2
+                if P.modeData.b2bCharge > 16 then
+                    bonus = true
+                end
             end
             -- Update charge
             P.modeData.b2bCharge = P.modeData.b2bCharge + b2bCharge
@@ -657,6 +680,10 @@ function turnBased(timeControls) return {
             else
                 -- One big group
                 table.insert(P.atk, attack)
+            end
+            if bonus then
+                -- Max B2B adds an extra line separated from the rest
+                table.insert(P.atk, 1)
             end
             P.sendTimes = {}
             for i=1,#P.atk do

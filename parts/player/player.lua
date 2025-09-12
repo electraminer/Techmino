@@ -1980,7 +1980,7 @@ do
             cmb=cmb+1
             if dospin then
                 cscore=(spinSCR[C.name] or spinSCR[8])[cc]
-                if self.b2b>800 then
+                if self.b2b>self.gameEnv.b3b then
                     self:showText(text.b3b..text.block[C.name]..text.spin..text.clear[cc],0,-30,35,'stretch')
                     yomi=yomi..text.b3b..text.block[C.name]..text.spin..text.clear[cc]
                     atk=b2bATK[cc]+cc*.5
@@ -1990,7 +1990,7 @@ do
                     if self.sound then
                         VOC.play('b3b',CHN)
                     end
-                elseif self.b2b>=50 then
+                elseif self.b2b>=self.gameEnv.b2b then
                     self:showText(text.b2b..text.block[C.name]..text.spin..text.clear[cc],0,-30,35,'spin')
                     yomi=yomi..text.b2b..text.block[C.name]..text.spin..text.clear[cc]
                     atk=b2bATK[cc]
@@ -2026,7 +2026,7 @@ do
                 end
             elseif cc>=4 then
                 cscore=clearSCR[cc]
-                if self.b2b>800 then
+                if self.b2b>self.gameEnv.b3b then
                     self:showText(text.b3b..text.clear[cc],0,-30,50,'fly')
                     yomi=text.b3b..text.clear[cc]..yomi
                     atk=4*cc-10
@@ -2037,7 +2037,7 @@ do
                     if self.sound then
                         VOC.play('b3b',CHN)
                     end
-                elseif self.b2b>=50 then
+                elseif self.b2b>=self.gameEnv.b2b then
                     self:showText(text.b2b..text.clear[cc],0,-30,50,'drive')
                     yomi=text.b2b..text.clear[cc]..yomi
                     sendTime=80
@@ -2213,8 +2213,8 @@ do
                 cscore=30
             end
 
-            if self.b2b>800 then
-                self.b2b=max(self.b2b-40,800)
+            if self.b2b>self.gameEnv.b3b then
+                self.b2b=max(self.b2b-40,self.gameEnv.b3b)
             end
             self:garbageRelease()
         end
