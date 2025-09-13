@@ -653,6 +653,7 @@ function turnBased(timeControls) return {
                     bonus = true
                 end
             elseif P.lastPiece.hpc then
+                attack = 4
                 cheesy = true
                 red = true
                 b2bCharge = 2
